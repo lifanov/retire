@@ -22,8 +22,9 @@ export class RetirementCalculator {
         // Simplified bracket calculation
         // This is a rough marginal tax calc.
         for (const bracket of brackets) {
+            const bracketMax = bracket.max === null ? Infinity : bracket.max;
             if (taxableIncome > bracket.min) {
-                const taxableAmountInBracket = Math.min(taxableIncome, bracket.max) - bracket.min;
+                const taxableAmountInBracket = Math.min(taxableIncome, bracketMax) - bracket.min;
                 tax += taxableAmountInBracket * bracket.rate;
             }
         }
