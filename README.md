@@ -1,73 +1,31 @@
-# React + TypeScript + Vite
+# Retirement Calculator Web App
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**⚠️ STATUS: The live site is currently broken. Please see HACKING.md for local development instructions.**
 
-Currently, two official plugins are available:
+A simple yet sophisticated web application designed to help US citizens determine if they can retire by a specific target date.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Features
 
-## React Compiler
+-   **Simple Interface**: A non-daunting, step-by-step wizard guides you through the process.
+-   **Sophisticated Logic**:
+    -   **Taxes**: Calculates Federal Income Tax (2025 brackets), State Income Tax (Configurable per state), and Capital Gains Tax.
+    -   **Healthcare**: Estimates annual healthcare costs based on age, factoring in pre-Medicare private insurance curves and Medicare premiums (Part B/D/Medigap) with specific inflation rates.
+    -   **Social Security**: Estimates benefits with actuarial adjustments for early (62+) or late (70) claiming.
+    -   **Inflation & Growth**: Accounts for annual inflation and investment returns.
+-   **Interactive Dashboard**:
+    -   Visualizes the "First Year of Retirement" solvency formula.
+    -   Allows real-time tweaking of assumptions (Retirement Age, Expenses, Savings, etc.) via sliders.
+    -   Provides an immediate "YES" or "NO" solvency answer with a suggested feasible retirement date if the plan fails.
+-   **Persistence**: Automatically saves your progress to your browser's local storage so you don't lose your data.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## How it Works
 
-## Expanding the ESLint configuration
+1.  **Input**: Users provide their target date, age, location (state), financials, and savings breakdown.
+2.  **Simulation**: The app runs a year-by-year cash flow simulation from the current age until age 95.
+    -   It withdraws from taxable accounts first, then tax-advantaged accounts.
+    -   It calculates taxes annually based on the specific withdrawal mix and income.
+3.  **Result**: It determines if assets remain positive through the life expectancy.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Hosting
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+The application is designed to be hosted on GitHub Pages.
