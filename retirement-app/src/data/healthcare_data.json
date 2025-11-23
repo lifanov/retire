@@ -1,0 +1,12 @@
+{
+  "notes": "Annual average healthcare costs. Based on Fidelity Retiree Health Care Cost Estimate 2024 and Medicare premiums.",
+  "pre_medicare_annual_cost": {
+    "base": 6000,
+    "age_multiplier": 0.03
+  },
+  "medicare_annual_cost": {
+    "part_b_premium": 2097.60,
+    "part_d_and_supp": 3000.00,
+    "total": 5097.60
+  }
+}
