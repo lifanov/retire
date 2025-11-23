@@ -97,6 +97,7 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
             lifeExpectancy: 90,
             savingsPreTax: initialData.savingsPreTax,
             savingsPostTax: initialData.savingsPostTax,
+            savingsHSA: initialData.savingsHSA,
             annualIncome: initialData.annualIncome,
             annualExpenses: initialData.annualExpenses,
             socialSecurityAt67: initialData.ssEstimate,
@@ -154,6 +155,7 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
     const surplus = totalIncome - totalOutflow;
 
     const selectedStateData = (stateTaxDataRaw as any)[simInputs.state] as StateTaxData;
+    const stateHealthcareMultiplier = (healthcareDataRaw.state_multipliers as any)[simInputs.state] || 1.0;
 
     return (
         <div className="max-w-6xl mx-auto p-6">
@@ -293,6 +295,16 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
                     />
 
                      <SliderRow
+                        label="HSA Balance"
+                        value={simInputs.savingsHSA}
+                        min={0}
+                        max={500000}
+                        step={1000}
+                        onChange={v => setSimInputs({...simInputs, savingsHSA: v})}
+                        format={formatMoney}
+                    />
+
+                     <SliderRow
                         label="Social Security (at 67)"
                         value={simInputs.socialSecurityAt67}
                         min={0}
@@ -336,6 +348,7 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
                                     {selectedStateData.income_tax.type === 'progressive' && (
                                         <p><span className="font-semibold">Top Rate:</span> {((selectedStateData.income_tax.brackets![selectedStateData.income_tax.brackets!.length - 1].rate) * 100).toFixed(2)}%</p>
                                     )}
+                                    <p className="mt-1"><span className="font-semibold">Healthcare Cost Factor:</span> {stateHealthcareMultiplier}x</p>
                                 </div>
                             )}
                          </div>

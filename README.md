@@ -9,7 +9,8 @@ A simple yet sophisticated web application designed to help US citizens determin
 -   **Simple Interface**: A non-daunting, step-by-step wizard guides you through the process.
 -   **Sophisticated Logic**:
     -   **Taxes**: Calculates Federal Income Tax (2025 brackets), State Income Tax (Configurable per state), and Capital Gains Tax.
-    -   **Healthcare**: Estimates annual healthcare costs based on age, factoring in pre-Medicare private insurance curves and Medicare premiums (Part B/D/Medigap) with specific inflation rates.
+    -   **Healthcare**: Estimates annual healthcare costs based on age and **state of residence**, factoring in pre-Medicare private insurance curves and Medicare premiums (Part B/D/Medigap) with specific inflation rates.
+    -   **HSA Support**: Prioritizes tax-free Health Savings Account (HSA) withdrawals for healthcare expenses.
     -   **Social Security**: Estimates benefits with actuarial adjustments for early (62+) or late (70) claiming.
     -   **Inflation & Growth**: Accounts for annual inflation and investment returns.
 -   **Interactive Dashboard**:

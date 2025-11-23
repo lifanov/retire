@@ -34,10 +34,7 @@ export interface SimulationInputs {
     // Financials
     savingsPreTax: number;
     savingsPostTax: number; // Taxable brokerage
-    // We treat Roth as tax-free, but for simplicity let's stick to Pre/Post for now or assume Post includes Roth if we want to be simple,
-    // BUT the prompt asked for "Capital Gains taxes". Post-tax brokerage has cap gains. Roth does not.
-    // For this simple app, "Post-Tax" = Taxable Brokerage.
-    // We could add "savingsRoth" later if needed.
+    savingsHSA: number; // Health Savings Account (Tax Free for Healthcare)
 
     annualIncome: number;
     annualExpenses: number;
