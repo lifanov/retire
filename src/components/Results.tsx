@@ -1,7 +1,15 @@
 import React, { useMemo, useState } from 'react';
+import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { type WizardData } from './Wizard';
 import { RetirementCalculator } from '../logic/RetirementCalculator';
-import { type SimulationInputs, type SimulationResult } from '../logic/types';
+import { CONSTANTS, type SimulationInputs, type SimulationResult, type StateTaxData } from '../logic/types';
+import { Select } from './UI';
+
+import stateTaxDataRaw from '../data/state_tax_config.json';
+import healthcareDataRaw from '../data/healthcare_data.json';
+import federalTaxDataRaw from '../data/federal_tax_data.json';
+
+const STATE_OPTIONS = Object.keys(stateTaxDataRaw).map(k => ({ value: k, label: (stateTaxDataRaw as any)[k].name }));
 
 interface Props {
     initialData: WizardData;
@@ -34,6 +42,47 @@ const SliderRow: React.FC<{
     </div>
 );
 
+const SavingsGraph: React.FC<{ history: SimulationResult['history'] }> = ({ history }) => {
+    // Transform data for lighter payload if needed, but history is small enough
+    const data = history.map(h => ({
+        age: h.age,
+        netWorth: Math.round(h.assetsEnd),
+        year: h.year
+    }));
+
+    return (
+        <div className="h-64 w-full mt-4">
+            <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                    <defs>
+                        <linearGradient id="colorNetWorth" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#2563eb" stopOpacity={0.8}/>
+                            <stop offset="95%" stopColor="#2563eb" stopOpacity={0}/>
+                        </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <XAxis dataKey="age" label={{ value: 'Age', position: 'insideBottom', offset: -5 }} />
+                    <YAxis
+                        tickFormatter={(value) => `$${(value / 1000000).toFixed(1)}M`}
+                        width={60}
+                    />
+                    <Tooltip
+                        formatter={(value: number) => [`$${value.toLocaleString()}`, 'Net Worth']}
+                        labelFormatter={(label) => `Age ${label}`}
+                    />
+                    <Area
+                        type="monotone"
+                        dataKey="netWorth"
+                        stroke="#2563eb"
+                        fillOpacity={1}
+                        fill="url(#colorNetWorth)"
+                    />
+                </AreaChart>
+            </ResponsiveContainer>
+        </div>
+    );
+};
+
 export const Results: React.FC<Props> = ({ initialData, onReset }) => {
     // We maintain local state for the "interactive" part, seeded by wizard data
     const [simInputs, setSimInputs] = useState<SimulationInputs>(() => {
@@ -48,6 +97,7 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
             lifeExpectancy: 90,
             savingsPreTax: initialData.savingsPreTax,
             savingsPostTax: initialData.savingsPostTax,
+            savingsHSA: initialData.savingsHSA,
             annualIncome: initialData.annualIncome,
             annualExpenses: initialData.annualExpenses,
             socialSecurityAt67: initialData.ssEstimate,
@@ -79,13 +129,7 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
     const formatMoney = (n: number) => `$${Math.round(n).toLocaleString()}`;
 
     // Derived Formula Values (First year of retirement snapshot or simplified view)
-    // We want to show: (Assets + Growth) - (Expenses + Taxes + Healthcare)
-    // Let's grab the first year of retirement from history
     const retirementYearData = result.history.find(h => h.isRetired) || result.history[result.history.length-1];
-
-    // If we never retire in the sim (e.g. start retired), use first year.
-    // The formula is conceptual.
-    // Let's display: "Annual Need vs Safe Withdrawal + Income"
 
     const scrollTo = (id: string) => {
         const el = document.getElementById(id);
@@ -110,8 +154,11 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
     const totalOutflow = retirementYearData.expenses + retirementYearData.healthcare + retirementYearData.taxes;
     const surplus = totalIncome - totalOutflow;
 
+    const selectedStateData = (stateTaxDataRaw as any)[simInputs.state] as StateTaxData;
+    const stateHealthcareMultiplier = (healthcareDataRaw.state_multipliers as any)[simInputs.state] || 1.0;
+
     return (
-        <div className="max-w-4xl mx-auto p-6">
+        <div className="max-w-6xl mx-auto p-6">
             {/* Header / Status */}
             <div className={`p-8 rounded-xl text-center mb-8 shadow-lg ${result.isSolvent ? 'bg-green-100 text-green-900' : 'bg-red-100 text-red-900'}`}>
                 <h1 className="text-6xl font-black mb-2">{result.isSolvent ? 'YES' : 'NO'}</h1>
@@ -132,10 +179,10 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
                 )}
             </div>
 
-            {/* Formula Visualization */}
-            <div className="bg-white p-6 rounded-xl shadow mb-8 overflow-x-auto">
+            {/* Formula Visualization & Graph */}
+            <div className="bg-white p-6 rounded-xl shadow mb-8">
                 <h3 className="text-lg font-bold text-gray-400 mb-4 uppercase tracking-widest text-center">First Year of Retirement Snapshot</h3>
-                <div className="flex items-center justify-center gap-2 md:gap-4 min-w-[600px]">
+                <div className="flex items-center justify-center gap-2 md:gap-4 overflow-x-auto min-w-[600px] pb-4">
                     <div className="flex flex-col gap-2 p-3 bg-gray-50 rounded-lg border border-gray-100">
                         <span className="text-center font-bold text-gray-400 text-xs">INFLOWS</span>
                         <div className="flex items-center gap-2">
@@ -186,6 +233,11 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
                             {formatMoney(surplus)}
                          </span>
                     </div>
+                </div>
+
+                <div className="mt-8 border-t pt-8">
+                    <h4 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-2 text-center">Total Net Worth Over Time</h4>
+                    <SavingsGraph history={result.history} />
                 </div>
             </div>
 
@@ -243,6 +295,16 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
                     />
 
                      <SliderRow
+                        label="HSA Balance"
+                        value={simInputs.savingsHSA}
+                        min={0}
+                        max={500000}
+                        step={1000}
+                        onChange={v => setSimInputs({...simInputs, savingsHSA: v})}
+                        format={formatMoney}
+                    />
+
+                     <SliderRow
                         label="Social Security (at 67)"
                         value={simInputs.socialSecurityAt67}
                         min={0}
@@ -264,22 +326,68 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
 
                 <div className="bg-white p-6 rounded-xl shadow">
                     <h3 className="text-xl font-bold mb-4 border-b pb-2">Assumptions & Details</h3>
-                    <div className="space-y-4">
-                         <div id="row-Age">
-                            <span className="block text-sm font-medium text-gray-500">Current Age</span>
-                            <span className="text-lg font-bold">{simInputs.currentAge}</span>
-                         </div>
-                         <div id="row-State">
-                            <span className="block text-sm font-medium text-gray-500">State</span>
-                            <span className="text-lg font-bold">{simInputs.state}</span>
-                         </div>
-                         <div>
-                            <span className="block text-sm font-medium text-gray-500">Life Expectancy</span>
-                            <span className="text-lg font-bold">{simInputs.lifeExpectancy}</span>
+                    <div className="space-y-6">
+                         <div id="row-Age" className="flex justify-between border-b pb-2">
+                            <span className="text-gray-600">Current Age</span>
+                            <span className="font-bold">{simInputs.currentAge}</span>
                          </div>
 
-                         <div className="pt-4 mt-4 border-t">
-                             <button onClick={onReset} className="text-blue-600 underline text-sm">Start Over</button>
+                         <div id="row-State" className="border-b pb-4">
+                            <Select
+                                label="State of Residence"
+                                options={STATE_OPTIONS}
+                                value={simInputs.state}
+                                onChange={e => setSimInputs({...simInputs, state: e.target.value})}
+                            />
+                            {selectedStateData && (
+                                <div className="text-xs text-gray-500 mt-2 bg-gray-50 p-2 rounded">
+                                    <p><span className="font-semibold">Type:</span> {selectedStateData.income_tax.type}</p>
+                                    {selectedStateData.income_tax.type === 'flat' && (
+                                        <p><span className="font-semibold">Rate:</span> {(selectedStateData.income_tax.rate! * 100).toFixed(2)}%</p>
+                                    )}
+                                    {selectedStateData.income_tax.type === 'progressive' && (
+                                        <p><span className="font-semibold">Top Rate:</span> {((selectedStateData.income_tax.brackets![selectedStateData.income_tax.brackets!.length - 1].rate) * 100).toFixed(2)}%</p>
+                                    )}
+                                    <p className="mt-1"><span className="font-semibold">Healthcare Cost Factor:</span> {stateHealthcareMultiplier}x</p>
+                                </div>
+                            )}
+                         </div>
+
+                         <div className="border-b pb-2">
+                             <h4 className="font-bold text-gray-700 mb-2 text-sm uppercase">Constants</h4>
+                             <div className="grid grid-cols-2 gap-y-1 text-sm">
+                                 <span className="text-gray-600">Inflation</span>
+                                 <span className="font-mono text-right">{(CONSTANTS.INFLATION * 100).toFixed(1)}%</span>
+
+                                 <span className="text-gray-600">Inv. Return Rate</span>
+                                 <span className="font-mono text-right">{(CONSTANTS.RETURN_RATE * 100).toFixed(1)}%</span>
+
+                                 <span className="text-gray-600">Healthcare Inflation</span>
+                                 <span className="font-mono text-right">{(CONSTANTS.HEALTHCARE_INFLATION * 100).toFixed(1)}%</span>
+                             </div>
+                         </div>
+
+                         <div className="border-b pb-2">
+                             <h4 className="font-bold text-gray-700 mb-2 text-sm uppercase">Federal Tax Data</h4>
+                             <div className="grid grid-cols-2 gap-y-1 text-sm">
+                                 <span className="text-gray-600">Std Deduction (Single)</span>
+                                 <span className="font-mono text-right">{formatMoney(federalTaxDataRaw.standard_deduction.single)}</span>
+                             </div>
+                         </div>
+
+                         <div className="border-b pb-2">
+                             <h4 className="font-bold text-gray-700 mb-2 text-sm uppercase">Healthcare (National)</h4>
+                             <div className="grid grid-cols-2 gap-y-1 text-sm">
+                                 <span className="text-gray-600">Base Pre-Medicare</span>
+                                 <span className="font-mono text-right">{formatMoney(healthcareDataRaw.pre_medicare_annual_cost.base)}</span>
+
+                                 <span className="text-gray-600">Medicare Total (Est)</span>
+                                 <span className="font-mono text-right">{formatMoney(healthcareDataRaw.medicare_annual_cost.total)}</span>
+                             </div>
+                         </div>
+
+                         <div className="pt-4">
+                             <button onClick={onReset} className="text-blue-600 underline text-sm hover:text-blue-800">Start Over</button>
                          </div>
                     </div>
                 </div>

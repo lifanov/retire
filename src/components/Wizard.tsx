@@ -12,6 +12,7 @@ export interface WizardData {
     annualExpenses: number;
     savingsPreTax: number;
     savingsPostTax: number;
+    savingsHSA: number;
     ssEstimate: number;
     step: number;
 }
@@ -24,6 +25,7 @@ export const DEFAULT_WIZARD_DATA: WizardData = {
     annualExpenses: 40000,
     savingsPreTax: 0,
     savingsPostTax: 0,
+    savingsHSA: 0,
     ssEstimate: 20000,
     step: 0
 };
@@ -112,20 +114,27 @@ export const Wizard: React.FC<Props> = ({ data, setData, onComplete }) => {
         // Local state for total savings fallback
         const [totalSavings, setTotalSavings] = React.useState<number | ''>('');
         const [showBreakdown, setShowBreakdown] = React.useState(true);
+        const [hsaInput, setHsaInput] = React.useState<number | ''>('');
+        const [skipHSA, setSkipHSA] = React.useState(false);
 
-        const handleSkipBreakdown = () => {
-            if (typeof totalSavings === 'number' && totalSavings > 0) {
-                // Apply default 50/50 split
-                const split = totalSavings / 2;
-                setData({
-                    ...data,
-                    savingsPreTax: split,
-                    savingsPostTax: split,
-                    step: data.step + 1
-                });
-            } else {
-                next();
-            }
+        const handleNext = () => {
+             // If manual breakdown is hidden, apply logic
+             if (!showBreakdown) {
+                 if (typeof totalSavings === 'number' && totalSavings > 0) {
+                     const split = totalSavings / 2;
+                     update('savingsPreTax', split);
+                     update('savingsPostTax', split);
+                 }
+                 update('savingsHSA', 0); // Assume 0 if skipping breakdown entirely
+             } else {
+                 // Check HSA
+                 if (skipHSA || hsaInput === '') {
+                     update('savingsHSA', 0);
+                 } else {
+                     update('savingsHSA', hsaInput);
+                 }
+             }
+             next();
         };
 
         return (
@@ -165,16 +174,34 @@ export const Wizard: React.FC<Props> = ({ data, setData, onComplete }) => {
                                 value={data.savingsPostTax}
                                 onChange={e => update('savingsPostTax', parseFloat(e.target.value))}
                             />
+
+                            <div className="mt-4 pt-4 border-t">
+                                <h3 className="text-sm font-bold text-gray-700 mb-2">HSA Balance</h3>
+                                {!skipHSA ? (
+                                    <>
+                                        <Input
+                                            label="Health Savings Account ($)"
+                                            type="number"
+                                            value={hsaInput}
+                                            onChange={e => setHsaInput(parseFloat(e.target.value) || '')}
+                                        />
+                                        <button onClick={() => setSkipHSA(true)} className="text-sm text-gray-500 underline">Skip / I don't have one</button>
+                                    </>
+                                ) : (
+                                    <div className="flex justify-between items-center bg-gray-50 p-2 rounded">
+                                        <span className="text-sm text-gray-500">Skipped (Assumed $0)</span>
+                                        <button onClick={() => setSkipHSA(false)} className="text-sm text-blue-600 underline">Edit</button>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     )}
                 </div>
 
-                <div className="flex gap-2">
-                    {showBreakdown ? (
-                        <button onClick={next} className="flex-1 bg-blue-600 text-white p-3 rounded">Next</button>
-                    ) : (
-                         <button onClick={handleSkipBreakdown} className="flex-1 bg-blue-600 text-white p-3 rounded">Next (Apply Defaults)</button>
-                    )}
+                <div className="flex gap-2 mt-6">
+                    <button onClick={handleNext} className="flex-1 bg-blue-600 text-white p-3 rounded">
+                        {showBreakdown ? 'Next' : 'Next (Apply Defaults)'}
+                    </button>
                 </div>
             </div>
         );
