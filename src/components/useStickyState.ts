@@ -3,8 +3,13 @@ import { useState, useEffect } from 'react';
 
 export function useStickyState<T>(defaultValue: T, key: string): [T, (value: T) => void] {
   const [value, setValue] = useState<T>(() => {
-    const stickyValue = window.localStorage.getItem(key);
-    return stickyValue !== null ? JSON.parse(stickyValue) : defaultValue;
+    try {
+      const stickyValue = window.localStorage.getItem(key);
+      return stickyValue !== null ? JSON.parse(stickyValue) : defaultValue;
+    } catch (error) {
+      console.warn(`Error parsing localStorage key "${key}":`, error);
+      return defaultValue;
+    }
   });
 
   useEffect(() => {
