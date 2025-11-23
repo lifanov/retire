@@ -1,7 +1,5 @@
 # Retirement Calculator Web App
 
-**⚠️ STATUS: The live site is currently broken. Please see HACKING.md for local development instructions.**
-
 A simple yet sophisticated web application designed to help US citizens determine if they can retire by a specific target date.
 
 ## Features
