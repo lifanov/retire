@@ -1,18 +1,26 @@
 // Types for our calculation logic
 
+export type FilingStatus = 'single' | 'married_jointly' | 'married_separately' | 'head_of_household';
+
 export interface TaxData {
     year: number;
     standard_deduction: {
         single: number;
         married_jointly: number;
+        married_separately: number;
         head_of_household: number;
     };
     brackets: {
-        single: { rate: number; min: number; max: number }[];
-        married_jointly: { rate: number; min: number; max: number }[];
+        single: { rate: number; min: number; max: number | null }[];
+        married_jointly: { rate: number; min: number; max: number | null }[];
+        married_separately: { rate: number; min: number; max: number | null }[];
+        head_of_household: { rate: number; min: number; max: number | null }[];
     };
     capital_gains: {
-        single: { rate: number; min: number; max: number }[];
+        single: { rate: number; min: number; max: number | null }[];
+        married_jointly: { rate: number; min: number; max: number | null }[];
+        married_separately: { rate: number; min: number; max: number | null }[];
+        head_of_household: { rate: number; min: number; max: number | null }[];
     };
 }
 
@@ -34,6 +42,7 @@ export interface SimulationInputs {
     // Financials
     savingsPreTax: number;
     savingsPostTax: number; // Taxable brokerage
+    savingsRoth: number; // Tax Free
     savingsHSA: number; // Health Savings Account (Tax Free for Healthcare)
 
     annualIncome: number;
@@ -43,8 +52,14 @@ export interface SimulationInputs {
     socialSecurityAt67: number;
     socialSecurityStartAge: number; // User can tweak this
 
-    // Location
+    // Location & Tax
     state: string; // "CA", "TX", etc.
+    filingStatus: FilingStatus;
+
+    // Assumptions
+    inflationRate?: number;
+    returnRate?: number;
+    healthcareInflationRate?: number;
 }
 
 export interface SimulationResult {

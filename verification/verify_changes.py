@@ -7,70 +7,110 @@ async def run():
         browser = await p.chromium.launch()
         page = await browser.new_page()
 
-        await page.goto("http://localhost:3000/retire/")
+        # Navigate
+        try:
+            await page.goto("http://localhost:5173/retire/", timeout=10000)
+        except:
+             await page.goto("http://localhost:5173/", timeout=10000)
 
-        # Step 0: Date
-        await page.locator("input[type='date']").fill('2040-01-01')
-        await page.click('text=Next')
+        # Wait for app load
+        await expect(page.locator("h1")).to_contain_text("Retirement Planner")
 
-        # Step 1: Personal
-        await page.locator("input[type='number']").first.fill('40')
-        await page.select_option("select", 'CA')
-        await page.click('text=Next')
+        # Step 0: Target Date
+        await page.locator("input[type='date']").fill("2050-01-01")
+        await page.get_by_role("button", name="Next").click()
 
-        # Step 2: Financials
-        inputs = await page.locator("input[type='number']").all()
-        if len(inputs) >= 2:
-            await inputs[0].fill('100000')
-            await inputs[1].fill('50000')
-        await page.click('text=Next')
+        # Step 1: Personal Info
+        await page.locator("input[type='number']").first.fill("30")
+        await page.get_by_role("button", name="Next").click()
 
-        # Step 3: Assets
-        # The button "Next (Apply Defaults)" MIGHT NOT EXIST if the input for "Total Savings Estimate" is empty.
-        # By default, totalSavings is ''.
-        # So we see "I know the breakdown (Show)" logic.
-        # Actually, let's look at Wizard code again.
-        # {showBreakdown && ( ... inputs ... )}
-        # {showBreakdown ? <button>Next</button> : <button>Next (Apply Defaults)</button>}
-        # Default showBreakdown is TRUE.
-        # So the button text is just "Next".
-        # And we need to fill the breakdown inputs or toggle the breakdown.
+        # Step 2: Tax Filing Status
+        await expect(page.get_by_text("Tax Filing Status")).to_be_visible()
+        select = page.locator("select")
+        await select.select_option("head_of_household")
+        await page.get_by_role("button", name="Next").click()
 
-        # Let's fill the breakdown inputs as they are visible by default.
-        assets_inputs = await page.locator("input[type='number']").all()
-        # There should be 3 inputs (Total Estimate, Pre-Tax, Post-Tax)
-        # But let's just find them by label or index.
-        # Pre-Tax Savings
-        # Post-Tax Savings
-        # Note: Previous step inputs are gone (unmounted).
-        if len(assets_inputs) >= 2:
-             # The first one might be "Total Savings Estimate"
-             # The next two are Pre/Post tax.
-             # Let's fill all just in case.
-             for inp in assets_inputs:
-                 await inp.fill('10000')
+        # Step 3: Financials
+        inputs = page.locator("input[type='number']")
+        await inputs.nth(0).fill("100000")
+        await inputs.nth(1).fill("50000")
+        await page.get_by_role("button", name="Next").click()
 
-        await page.click('button:has-text("Next")')
+        # Step 4: Assets
+        await expect(page.get_by_text("Current Savings")).to_be_visible()
 
-        # Step 4: SS
-        await page.locator("input[type='number']").fill('25000')
-        await page.click('text=Calculate')
+        # Target the Total Savings input more robustly
+        total_input = page.get_by_placeholder("Total Amount")
+        await total_input.click()
+        await total_input.fill("100000")
 
-        # Wait for results
-        await expect(page.get_by_text("First Year of Retirement Snapshot")).to_be_visible()
+        pre_tax = page.locator("input[type='number']").nth(1)
+        roth = page.locator("input[type='number']").nth(2)
+        post_tax = page.locator("input[type='number']").nth(3)
 
-        # Verify Graph header
-        await expect(page.get_by_text("Total Net Worth Over Time")).to_be_visible()
+        # Verify initial auto-fill (30/30/40 split)
+        # 100000 * 0.3 = 30000
+        # 100000 * 0.4 = 40000
+        await expect(pre_tax).to_have_value("30000")
+        await expect(roth).to_have_value("30000")
+        await expect(post_tax).to_have_value("40000")
 
-        # Verify Assumptions Section and State Dropdown
-        await expect(page.get_by_text("Assumptions & Details")).to_be_visible()
+        # Test Validation Logic
+        # Change Pre-Tax to 50000 (Sum becomes 50k + 30k + 40k = 120k != 100k)
+        await pre_tax.fill("50000")
 
-        # Change state
-        await page.locator('select').select_option('TX')
+        # Verify others did not change
+        await expect(roth).to_have_value("30000")
+        await expect(post_tax).to_have_value("40000")
 
-        await page.wait_for_timeout(500)
+        # Try Next -> Expect Error
+        await page.get_by_role("button", name="Next").click()
 
-        await page.screenshot(path="verification/results_page.png", full_page=True)
+        # Verify Error Message
+        await expect(page.get_by_text("does not match your total")).to_be_visible()
+
+        # Verify Fix Button
+        fix_btn = page.get_by_text("Reset to Default Split")
+        await expect(fix_btn).to_be_visible()
+
+        # Click Fix
+        await fix_btn.click()
+
+        # Verify values reset
+        await expect(pre_tax).to_have_value("30000")
+        await expect(roth).to_have_value("30000")
+        await expect(post_tax).to_have_value("40000")
+        await expect(page.get_by_text("does not match your total")).not_to_be_visible()
+
+        # Proceed
+        await page.get_by_role("button", name="Next").click()
+
+        # Step 5: SS
+        await page.get_by_role("button", name="Calculate").click()
+
+        # Results Page
+        # Just check net worth graph exists
+        await expect(page.locator(".recharts-surface")).to_be_visible()
+
+        # Verify Filing Status
+        await expect(page.get_by_text("Head of Household", exact=False)).to_be_visible()
+
+        # Verify Tweak Toggle
+        tweak_chk = page.get_by_text("Tweak")
+        await tweak_chk.click()
+
+        # Check for Safe Withdrawal Rate input (value 4.0 by default)
+        swr_input = page.locator("input[value='4.0']")
+        await expect(swr_input).to_be_visible()
+
+        # Change SWR to 5%
+        await swr_input.fill("5.0")
+
+        # Verify display update
+        await expect(page.get_by_text("Safe Withdrawal (5.0%)")).to_be_visible()
+
+        # Take screenshot
+        await page.screenshot(path="verification/verification.png", full_page=True)
 
         await browser.close()
 

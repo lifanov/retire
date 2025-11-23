@@ -97,14 +97,22 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
             lifeExpectancy: 90,
             savingsPreTax: initialData.savingsPreTax,
             savingsPostTax: initialData.savingsPostTax,
+            savingsRoth: initialData.savingsRoth,
             savingsHSA: initialData.savingsHSA,
             annualIncome: initialData.annualIncome,
             annualExpenses: initialData.annualExpenses,
             socialSecurityAt67: initialData.ssEstimate,
             socialSecurityStartAge: 67, // Default
-            state: initialData.state
+            state: initialData.state,
+            filingStatus: initialData.filingStatus,
+            inflationRate: CONSTANTS.INFLATION,
+            returnRate: CONSTANTS.RETURN_RATE,
+            healthcareInflationRate: CONSTANTS.HEALTHCARE_INFLATION
         };
     });
+
+    const [tweakAssumptions, setTweakAssumptions] = useState(false);
+    const [withdrawalRate, setWithdrawalRate] = useState(0.04);
 
     const result: SimulationResult = useMemo(() => {
         const calculator = new RetirementCalculator(simInputs);
@@ -149,7 +157,7 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
         </span>
     );
 
-    const safeWithdrawal = (retirementYearData.assetsStart * 0.04); // 4% rule approximation for display
+    const safeWithdrawal = (retirementYearData.assetsStart * withdrawalRate);
     const totalIncome = safeWithdrawal + retirementYearData.income; // SW + SS
     const totalOutflow = retirementYearData.expenses + retirementYearData.healthcare + retirementYearData.taxes;
     const surplus = totalIncome - totalOutflow;
@@ -187,9 +195,9 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
                         <span className="text-center font-bold text-gray-400 text-xs">INFLOWS</span>
                         <div className="flex items-center gap-2">
                             <FormulaItem
-                                label="Safe Withdrawal (4%)"
+                                label={`Safe Withdrawal (${(withdrawalRate * 100).toFixed(1)}%)`}
                                 value={formatMoney(safeWithdrawal)}
-                                targetId="row-Savings(Pre-Tax)"
+                                targetId="row-Constants"
                             />
                             <FormulaItem
                                 label="Social Security"
@@ -285,6 +293,16 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
                     />
 
                      <SliderRow
+                        label="Savings (Roth / Tax-Free)"
+                        value={simInputs.savingsRoth}
+                        min={0}
+                        max={2000000}
+                        step={5000}
+                        onChange={v => setSimInputs({...simInputs, savingsRoth: v})}
+                        format={formatMoney}
+                    />
+
+                     <SliderRow
                         label="Savings (Post-Tax)"
                         value={simInputs.savingsPostTax}
                         min={0}
@@ -353,25 +371,82 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
                             )}
                          </div>
 
-                         <div className="border-b pb-2">
-                             <h4 className="font-bold text-gray-700 mb-2 text-sm uppercase">Constants</h4>
-                             <div className="grid grid-cols-2 gap-y-1 text-sm">
+                         <div id="row-Constants" className="border-b pb-2">
+                             <div className="flex justify-between items-center mb-2">
+                                <h4 className="font-bold text-gray-700 text-sm uppercase">Constants</h4>
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={tweakAssumptions}
+                                        onChange={e => setTweakAssumptions(e.target.checked)}
+                                        className="rounded text-blue-600 focus:ring-blue-500"
+                                    />
+                                    <span className="text-xs text-blue-600 font-semibold underline">Tweak</span>
+                                </label>
+                             </div>
+
+                             <div className="grid grid-cols-2 gap-y-2 text-sm items-center">
                                  <span className="text-gray-600">Inflation</span>
-                                 <span className="font-mono text-right">{(CONSTANTS.INFLATION * 100).toFixed(1)}%</span>
+                                 {tweakAssumptions ? (
+                                    <input
+                                        type="number"
+                                        step="0.1"
+                                        value={((simInputs.inflationRate ?? CONSTANTS.INFLATION) * 100).toFixed(1)}
+                                        onChange={e => setSimInputs({...simInputs, inflationRate: parseFloat(e.target.value) / 100})}
+                                        className="text-right border rounded p-1 w-20"
+                                    />
+                                 ) : (
+                                    <span className="font-mono text-right">{((simInputs.inflationRate ?? CONSTANTS.INFLATION) * 100).toFixed(1)}%</span>
+                                 )}
 
                                  <span className="text-gray-600">Inv. Return Rate</span>
-                                 <span className="font-mono text-right">{(CONSTANTS.RETURN_RATE * 100).toFixed(1)}%</span>
+                                 {tweakAssumptions ? (
+                                    <input
+                                        type="number"
+                                        step="0.1"
+                                        value={((simInputs.returnRate ?? CONSTANTS.RETURN_RATE) * 100).toFixed(1)}
+                                        onChange={e => setSimInputs({...simInputs, returnRate: parseFloat(e.target.value) / 100})}
+                                        className="text-right border rounded p-1 w-20"
+                                    />
+                                 ) : (
+                                    <span className="font-mono text-right">{((simInputs.returnRate ?? CONSTANTS.RETURN_RATE) * 100).toFixed(1)}%</span>
+                                 )}
 
                                  <span className="text-gray-600">Healthcare Inflation</span>
-                                 <span className="font-mono text-right">{(CONSTANTS.HEALTHCARE_INFLATION * 100).toFixed(1)}%</span>
+                                 {tweakAssumptions ? (
+                                    <input
+                                        type="number"
+                                        step="0.1"
+                                        value={((simInputs.healthcareInflationRate ?? CONSTANTS.HEALTHCARE_INFLATION) * 100).toFixed(1)}
+                                        onChange={e => setSimInputs({...simInputs, healthcareInflationRate: parseFloat(e.target.value) / 100})}
+                                        className="text-right border rounded p-1 w-20"
+                                    />
+                                 ) : (
+                                    <span className="font-mono text-right">{((simInputs.healthcareInflationRate ?? CONSTANTS.HEALTHCARE_INFLATION) * 100).toFixed(1)}%</span>
+                                 )}
+
+                                 <span className="text-gray-600">Safe Withdrawal Rate</span>
+                                 {tweakAssumptions ? (
+                                    <input
+                                        type="number"
+                                        step="0.1"
+                                        value={(withdrawalRate * 100).toFixed(1)}
+                                        onChange={e => setWithdrawalRate(parseFloat(e.target.value) / 100)}
+                                        className="text-right border rounded p-1 w-20"
+                                    />
+                                 ) : (
+                                    <span className="font-mono text-right">{(withdrawalRate * 100).toFixed(1)}%</span>
+                                 )}
                              </div>
                          </div>
 
                          <div className="border-b pb-2">
                              <h4 className="font-bold text-gray-700 mb-2 text-sm uppercase">Federal Tax Data</h4>
                              <div className="grid grid-cols-2 gap-y-1 text-sm">
-                                 <span className="text-gray-600">Std Deduction (Single)</span>
-                                 <span className="font-mono text-right">{formatMoney(federalTaxDataRaw.standard_deduction.single)}</span>
+                                 <span className="text-gray-600">Filing Status</span>
+                                 <span className="font-mono text-right capitalize">{simInputs.filingStatus.replace(/_/g, ' ')}</span>
+                                 <span className="text-gray-600">Std Deduction</span>
+                                 <span className="font-mono text-right">{formatMoney(federalTaxDataRaw.standard_deduction[simInputs.filingStatus])}</span>
                              </div>
                          </div>
 

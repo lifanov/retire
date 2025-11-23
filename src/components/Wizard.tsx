@@ -1,17 +1,27 @@
 import React from 'react';
 import { Input, Select } from './UI';
 import stateTaxDataRaw from '../data/state_tax_config.json';
+import type { FilingStatus } from '../logic/types';
 
 const STATE_OPTIONS = Object.keys(stateTaxDataRaw).map(k => ({ value: k, label: (stateTaxDataRaw as any)[k].name }));
+
+const FILING_STATUS_OPTIONS: { value: FilingStatus, label: string }[] = [
+    { value: 'single', label: 'Single' },
+    { value: 'married_jointly', label: 'Married Filing Jointly' },
+    { value: 'married_separately', label: 'Married Filing Separately' },
+    { value: 'head_of_household', label: 'Head of Household' }
+];
 
 export interface WizardData {
     targetDate: string;
     currentAge: number;
     state: string;
+    filingStatus: FilingStatus;
     annualIncome: number;
     annualExpenses: number;
     savingsPreTax: number;
     savingsPostTax: number;
+    savingsRoth: number;
     savingsHSA: number;
     ssEstimate: number;
     step: number;
@@ -21,10 +31,12 @@ export const DEFAULT_WIZARD_DATA: WizardData = {
     targetDate: '',
     currentAge: 30,
     state: 'CA',
+    filingStatus: 'single',
     annualIncome: 60000,
     annualExpenses: 40000,
     savingsPreTax: 0,
     savingsPostTax: 0,
+    savingsRoth: 0,
     savingsHSA: 0,
     ssEstimate: 20000,
     step: 0
@@ -87,8 +99,24 @@ export const Wizard: React.FC<Props> = ({ data, setData, onComplete }) => {
         );
     }
 
-    // Step 2: Financials
+    // Step 2: Tax Filing Status (New Step)
     if (data.step === 2) {
+        return (
+            <div className="max-w-md mx-auto mt-10 p-6 bg-white shadow rounded">
+                <h2 className="text-2xl font-bold mb-4">Tax Filing Status</h2>
+                <Select
+                    label="Filing Status"
+                    options={FILING_STATUS_OPTIONS}
+                    value={data.filingStatus}
+                    onChange={e => update('filingStatus', e.target.value)}
+                />
+                <button onClick={next} className="w-full bg-blue-600 text-white p-3 rounded mt-4">Next</button>
+            </div>
+        );
+    }
+
+    // Step 3: Financials
+    if (data.step === 3) {
         return (
             <div className="max-w-md mx-auto mt-10 p-6 bg-white shadow rounded">
                 <h2 className="text-2xl font-bold mb-4">Financial Situation</h2>
@@ -109,31 +137,68 @@ export const Wizard: React.FC<Props> = ({ data, setData, onComplete }) => {
         );
     }
 
-    // Step 3: Assets Breakdown
-    if (data.step === 3) {
+    // Step 4: Assets Breakdown
+    if (data.step === 4) {
         // Local state for total savings fallback
-        const [totalSavings, setTotalSavings] = React.useState<number | ''>('');
+        const [totalSavings, setTotalSavings] = React.useState<number | ''>(
+            (data.savingsPreTax + data.savingsPostTax + (data.savingsRoth || 0)) || ''
+        );
         const [showBreakdown, setShowBreakdown] = React.useState(true);
-        const [hsaInput, setHsaInput] = React.useState<number | ''>('');
-        const [skipHSA, setSkipHSA] = React.useState(false);
+        const [hsaInput, setHsaInput] = React.useState<number | ''>(data.savingsHSA || '');
+        const [skipHSA, setSkipHSA] = React.useState(data.savingsHSA === 0);
+        const [error, setError] = React.useState<string | null>(null);
+
+        const handleTotalChange = (val: number | '') => {
+            setTotalSavings(val);
+            setError(null);
+            if (typeof val === 'number') {
+                // Default Split: 30% Pre, 30% Roth, 40% Post
+                const pre = val * 0.30;
+                const roth = val * 0.30;
+                const post = val * 0.40;
+
+                // Batch update
+                setData({
+                    ...data,
+                    savingsPreTax: pre,
+                    savingsPostTax: post,
+                    savingsRoth: roth
+                });
+            }
+        };
+
+        const resetSplit = () => {
+             if (typeof totalSavings === 'number') {
+                 const pre = totalSavings * 0.30;
+                 const roth = totalSavings * 0.30;
+                 const post = totalSavings * 0.40;
+                 // Batch update
+                 setData({
+                    ...data,
+                    savingsPreTax: pre,
+                    savingsPostTax: post,
+                    savingsRoth: roth
+                 });
+                 setError(null);
+             }
+        };
 
         const handleNext = () => {
-             // If manual breakdown is hidden, apply logic
-             if (!showBreakdown) {
-                 if (typeof totalSavings === 'number' && totalSavings > 0) {
-                     const split = totalSavings / 2;
-                     update('savingsPreTax', split);
-                     update('savingsPostTax', split);
-                 }
-                 update('savingsHSA', 0); // Assume 0 if skipping breakdown entirely
-             } else {
-                 // Check HSA
-                 if (skipHSA || hsaInput === '') {
-                     update('savingsHSA', 0);
-                 } else {
-                     update('savingsHSA', hsaInput);
+             // Validation: Pre + Roth + Post must match Total (if Total is used)
+             if (typeof totalSavings === 'number' && totalSavings > 0) {
+                 const sum = data.savingsPreTax + data.savingsPostTax + (data.savingsRoth || 0);
+                 if (Math.abs(sum - totalSavings) > 1) { // Epsilon for float math
+                     setError(`Your breakdown ($${Math.round(sum)}) does not match your total ($${totalSavings}).`);
+                     return;
                  }
              }
+
+             if (skipHSA || hsaInput === '') {
+                 update('savingsHSA', 0);
+             } else {
+                 update('savingsHSA', hsaInput);
+             }
+             setError(null);
              next();
         };
 
@@ -148,7 +213,7 @@ export const Wizard: React.FC<Props> = ({ data, setData, onComplete }) => {
                         className="w-full border border-gray-300 rounded p-2"
                         placeholder="Total Amount"
                         value={totalSavings}
-                        onChange={e => setTotalSavings(parseFloat(e.target.value) || '')}
+                        onChange={e => handleTotalChange(parseFloat(e.target.value) || '')}
                      />
                 </div>
 
@@ -157,7 +222,7 @@ export const Wizard: React.FC<Props> = ({ data, setData, onComplete }) => {
                         onClick={() => setShowBreakdown(!showBreakdown)}
                         className="text-blue-600 text-sm underline mb-4"
                     >
-                        {showBreakdown ? "I don't know the breakdown (Hide)" : "I know the breakdown (Show)"}
+                        {showBreakdown ? "Hide Breakdown" : "Show Breakdown"}
                     </button>
 
                     {showBreakdown && (
@@ -166,13 +231,19 @@ export const Wizard: React.FC<Props> = ({ data, setData, onComplete }) => {
                                 label="Pre-Tax Savings (401k, Traditional IRA)"
                                 type="number"
                                 value={data.savingsPreTax}
-                                onChange={e => update('savingsPreTax', parseFloat(e.target.value))}
+                                onChange={e => { update('savingsPreTax', parseFloat(e.target.value) || 0); setError(null); }}
                             />
                             <Input
-                                label="Post-Tax Savings (Brokerage, Bank)"
+                                label="Roth Savings (Roth IRA, Roth 401k)"
+                                type="number"
+                                value={data.savingsRoth}
+                                onChange={e => { update('savingsRoth', parseFloat(e.target.value) || 0); setError(null); }}
+                            />
+                            <Input
+                                label="Post-Tax / Taxable (Brokerage, Bank)"
                                 type="number"
                                 value={data.savingsPostTax}
-                                onChange={e => update('savingsPostTax', parseFloat(e.target.value))}
+                                onChange={e => { update('savingsPostTax', parseFloat(e.target.value) || 0); setError(null); }}
                             />
 
                             <div className="mt-4 pt-4 border-t">
@@ -198,17 +269,29 @@ export const Wizard: React.FC<Props> = ({ data, setData, onComplete }) => {
                     )}
                 </div>
 
+                {error && (
+                    <div className="mb-4 p-3 bg-red-100 text-red-800 rounded border border-red-200">
+                        <p className="text-sm font-bold mb-2">{error}</p>
+                        <button
+                            onClick={resetSplit}
+                            className="text-xs bg-white border border-red-300 px-2 py-1 rounded hover:bg-red-50"
+                        >
+                            Reset to Default Split (30% Pre / 30% Roth / 40% Post)
+                        </button>
+                    </div>
+                )}
+
                 <div className="flex gap-2 mt-6">
                     <button onClick={handleNext} className="flex-1 bg-blue-600 text-white p-3 rounded">
-                        {showBreakdown ? 'Next' : 'Next (Apply Defaults)'}
+                        Next
                     </button>
                 </div>
             </div>
         );
     }
 
-    // Step 4: Social Security
-    if (data.step === 4) {
+    // Step 5: Social Security
+    if (data.step === 5) {
         return (
             <div className="max-w-md mx-auto mt-10 p-6 bg-white shadow rounded">
                 <h2 className="text-2xl font-bold mb-4">Social Security</h2>
