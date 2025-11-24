@@ -48,6 +48,7 @@ export class RetirementCalculator {
 
         let rate = 0;
         for (const bracket of safeBrackets) {
+             const bracketMax = bracket.max === null ? Infinity : bracket.max;
              if (taxableIncomeIncludingGains > bracket.min) {
                  rate = bracket.rate;
              }
