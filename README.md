@@ -6,24 +6,24 @@ A simple yet sophisticated web application designed to help US citizens determin
 
 -   **Simple Interface**: A non-daunting, step-by-step wizard guides you through the process.
 -   **Sophisticated Logic**:
-    -   **Taxes**: Calculates Federal Income Tax (2025 brackets), State Income Tax (Configurable per state), and Capital Gains Tax.
+    -   **Taxes**: Calculates Federal Income Tax (2025 brackets for Single, MFJ, MFS, Head of Household), State Income Tax (Configurable per state), and Capital Gains Tax.
     -   **Healthcare**: Estimates annual healthcare costs based on age and **state of residence**, factoring in pre-Medicare private insurance curves and Medicare premiums (Part B/D/Medigap) with specific inflation rates.
-    -   **HSA Support**: Prioritizes tax-free Health Savings Account (HSA) withdrawals for healthcare expenses.
+    -   **HSA & Roth Support**: Prioritizes withdrawals from HSA (tax-free for healthcare), then Post-Tax (taxable), Pre-Tax (tax-deferred), and Roth (tax-free) to optimize tax efficiency.
     -   **Social Security**: Estimates benefits with actuarial adjustments for early (62+) or late (70) claiming.
     -   **Inflation & Growth**: Accounts for annual inflation and investment returns.
 -   **Interactive Dashboard**:
     -   Visualizes the "First Year of Retirement" solvency formula.
     -   **Detailed Graphs**: Plots your Total Net Worth over time to visualize asset depletion or growth.
     -   **Transparency**: Displays all key assumptions (inflation, tax brackets, healthcare base costs) and allows comparing results across different US states instantly.
-    -   Allows real-time tweaking of assumptions (Retirement Age, Expenses, Savings, etc.) via sliders.
+    -   **Tweakable Assumptions**: Allows real-time tweaking of variables (Retirement Age, Expenses, Savings) and constants (Inflation, Return Rate, Safe Withdrawal Rate) to stress-test your plan.
     -   Provides an immediate "YES" or "NO" solvency answer with a suggested feasible retirement date if the plan fails.
 -   **Persistence**: Automatically saves your progress to your browser's local storage so you don't lose your data.
 
 ## How it Works
 
-1.  **Input**: Users provide their target date, age, location (state), financials, and savings breakdown.
+1.  **Input**: Users provide their target date, age, tax filing status, location (state), financials, and savings breakdown (Pre-Tax, Roth, Post-Tax, HSA).
 2.  **Simulation**: The app runs a year-by-year cash flow simulation from the current age until age 95.
-    -   It withdraws from taxable accounts first, then tax-advantaged accounts.
+    -   It follows a tax-efficient withdrawal strategy: HSA (for healthcare) -> Post-Tax -> Pre-Tax -> Roth.
     -   It calculates taxes annually based on the specific withdrawal mix and income.
 3.  **Result**: It determines if assets remain positive through the life expectancy.
 
