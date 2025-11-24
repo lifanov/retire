@@ -1,4 +1,4 @@
-import { type SimulationInputs, type SimulationResult, type YearLog, CONSTANTS, type TaxData, type StateTaxData } from './types';
+import { type SimulationInputs, type SimulationResult, type YearLog, CONSTANTS, type TaxData, type StateTaxData, type FilingStatus } from './types';
 import federalTaxDataRaw from '../data/federal_tax_data.json';
 import stateTaxDataRaw from '../data/state_tax_config.json';
 import healthcareDataRaw from '../data/healthcare_data.json';
@@ -8,18 +8,28 @@ const stateTaxData = stateTaxDataRaw as Record<string, StateTaxData>;
 
 export class RetirementCalculator {
     private inputs: SimulationInputs;
+    private inflationRate: number;
+    private returnRate: number;
+    private healthcareInflationRate: number;
 
     constructor(inputs: SimulationInputs) {
         this.inputs = inputs;
+        this.inflationRate = inputs.inflationRate ?? CONSTANTS.INFLATION;
+        this.returnRate = inputs.returnRate ?? CONSTANTS.RETURN_RATE;
+        this.healthcareInflationRate = inputs.healthcareInflationRate ?? CONSTANTS.HEALTHCARE_INFLATION;
     }
 
-    private calculateFederalTax(taxableIncome: number, filingStatus: 'single' = 'single'): number {
+    private calculateFederalTax(taxableIncome: number, filingStatus: FilingStatus): number {
         if (taxableIncome <= 0) return 0;
 
         const brackets = federalTaxData.brackets[filingStatus];
+        if (!brackets) {
+             console.error(`Invalid filing status: ${filingStatus}`);
+             return 0;
+        }
+
         let tax = 0;
 
-        // Simplified bracket calculation
         for (const bracket of brackets) {
             const bracketMax = bracket.max === null ? Infinity : bracket.max;
             if (taxableIncome > bracket.min) {
@@ -28,6 +38,21 @@ export class RetirementCalculator {
             }
         }
         return tax;
+    }
+
+    private calculateCapitalGainsTax(taxableIncomeIncludingGains: number, realizedGains: number, filingStatus: FilingStatus): number {
+        if (realizedGains <= 0) return 0;
+
+        const brackets = federalTaxData.capital_gains[filingStatus];
+        const safeBrackets = brackets || federalTaxData.capital_gains['single'];
+
+        let rate = 0;
+        for (const bracket of safeBrackets) {
+             if (taxableIncomeIncludingGains > bracket.min) {
+                 rate = bracket.rate;
+             }
+        }
+        return realizedGains * rate;
     }
 
     private calculateStateTax(taxableIncome: number, stateCode: string): number {
@@ -58,13 +83,10 @@ export class RetirementCalculator {
     }
 
     private calculateHealthcareCost(age: number, currentYear: number, stateCode: string): number {
-        // Base costs in 2024 dollars
         let baseCost = 0;
         if (age >= CONSTANTS.MEDICARE_AGE) {
             baseCost = healthcareDataRaw.medicare_annual_cost.total;
         } else {
-            // Private insurance estimate with State Adjustment
-            // Default to 1.0 if state not found
             const stateMultiplier = (healthcareDataRaw.state_multipliers as Record<string, number>)[stateCode] || 1.0;
 
             baseCost = healthcareDataRaw.pre_medicare_annual_cost.base
@@ -72,9 +94,8 @@ export class RetirementCalculator {
                 * stateMultiplier;
         }
 
-        // Adjust for healthcare inflation from start year (assume 2024 start)
         const yearsPassed = currentYear - new Date().getFullYear();
-        return baseCost * Math.pow(1 + CONSTANTS.HEALTHCARE_INFLATION, yearsPassed);
+        return baseCost * Math.pow(1 + this.healthcareInflationRate, yearsPassed);
     }
 
     public simulate(): SimulationResult {
@@ -84,19 +105,19 @@ export class RetirementCalculator {
 
         let assetsPreTax = this.inputs.savingsPreTax;
         let assetsPostTax = this.inputs.savingsPostTax;
+        let assetsRoth = this.inputs.savingsRoth;
         let assetsHSA = this.inputs.savingsHSA;
 
-        // Loop until Life Expectancy
         while (currentAge <= this.inputs.lifeExpectancy) {
             const isRetired = currentAge >= this.inputs.retirementAge;
-            const assetsStart = assetsPreTax + assetsPostTax + assetsHSA;
+            const assetsStart = assetsPreTax + assetsPostTax + assetsRoth + assetsHSA;
 
             // 1. Determine Income (Inflows)
             let laborIncome = 0;
             let socialSecurity = 0;
 
             if (!isRetired) {
-                laborIncome = this.inputs.annualIncome * Math.pow(1 + CONSTANTS.INFLATION, currentYear - new Date().getFullYear());
+                laborIncome = this.inputs.annualIncome * Math.pow(1 + this.inflationRate, currentYear - new Date().getFullYear());
             } else {
                 if (currentAge >= this.inputs.socialSecurityStartAge) {
                     let benefit = this.inputs.socialSecurityAt67;
@@ -105,12 +126,12 @@ export class RetirementCalculator {
                         const adjustmentRate = variance < 0 ? 0.06 : 0.08;
                         benefit = benefit * (1 + (variance * adjustmentRate));
                     }
-                    socialSecurity = benefit * Math.pow(1 + CONSTANTS.INFLATION, currentYear - new Date().getFullYear());
+                    socialSecurity = benefit * Math.pow(1 + this.inflationRate, currentYear - new Date().getFullYear());
                 }
             }
 
             // 2. Determine Expenses (Outflows)
-            let expenses = this.inputs.annualExpenses * Math.pow(1 + CONSTANTS.INFLATION, currentYear - new Date().getFullYear());
+            let expenses = this.inputs.annualExpenses * Math.pow(1 + this.inflationRate, currentYear - new Date().getFullYear());
 
             // 3. Healthcare
             const healthcare = this.calculateHealthcareCost(currentAge, currentYear, this.inputs.state);
@@ -140,8 +161,10 @@ export class RetirementCalculator {
 
             let withdrawnPreTax = 0;
             let withdrawnPostTax = 0;
+            let withdrawnRoth = 0;
             let realizedGains = 0;
 
+            // Withdrawal Order: Post-Tax -> Pre-Tax -> Roth
             if (withdrawalNeeded > 0) {
                 // Take from Post Tax
                 if (assetsPostTax > withdrawalNeeded) {
@@ -154,13 +177,23 @@ export class RetirementCalculator {
                     withdrawalNeeded -= assetsPostTax;
                     assetsPostTax = 0;
 
-                    // Take remainder from Pre Tax
+                    // Take from Pre Tax
                     if (assetsPreTax > withdrawalNeeded) {
                         withdrawnPreTax = withdrawalNeeded;
                         assetsPreTax -= withdrawalNeeded;
                     } else {
                         withdrawnPreTax = assetsPreTax;
+                        withdrawalNeeded -= assetsPreTax;
                         assetsPreTax = 0;
+
+                        // Take from Roth
+                        if (assetsRoth > withdrawalNeeded) {
+                            withdrawnRoth = withdrawalNeeded;
+                            assetsRoth -= withdrawalNeeded;
+                        } else {
+                            withdrawnRoth = assetsRoth;
+                            assetsRoth = 0;
+                        }
                     }
                 }
             }
@@ -171,38 +204,43 @@ export class RetirementCalculator {
 
             // Calculate Tax Bill
             const ordinaryIncome = laborIncome + withdrawnPreTax + (socialSecurity * 0.85);
-            const standardDeduction = federalTaxData.standard_deduction.single;
+            const standardDeduction = federalTaxData.standard_deduction[this.inputs.filingStatus];
 
             const taxableOrdinaryIncome = Math.max(0, ordinaryIncome - standardDeduction);
 
-            const fedTax = this.calculateFederalTax(taxableOrdinaryIncome);
+            const fedTax = this.calculateFederalTax(taxableOrdinaryIncome, this.inputs.filingStatus);
             const stateTax = this.calculateStateTax(taxableOrdinaryIncome, this.inputs.state);
 
             const totalIncomeForCapGains = taxableOrdinaryIncome + realizedGains;
-            let capGainsRate = 0;
-            if (totalIncomeForCapGains > 47000) capGainsRate = 0.15;
-            if (totalIncomeForCapGains > 518900) capGainsRate = 0.20;
-
-            const capGainsTax = realizedGains * capGainsRate;
+            const capGainsTax = this.calculateCapitalGainsTax(totalIncomeForCapGains, realizedGains, this.inputs.filingStatus);
 
             taxes = fedTax + stateTax + capGainsTax;
 
-            // Pay Taxes
+            // Pay Taxes (prefer Post-Tax, then Pre-Tax, then Roth)
             if (assetsPostTax >= taxes) {
                 assetsPostTax -= taxes;
             } else {
                 let remainingTax = taxes - assetsPostTax;
                 assetsPostTax = 0;
-                assetsPreTax -= remainingTax;
+
+                if (assetsPreTax >= remainingTax) {
+                     assetsPreTax -= remainingTax;
+                } else {
+                     remainingTax -= assetsPreTax;
+                     assetsPreTax = 0;
+                     assetsRoth -= remainingTax;
+                }
             }
 
             // 6. Growth
-            const growthPre = assetsPreTax * CONSTANTS.RETURN_RATE;
-            const growthPost = assetsPostTax * CONSTANTS.RETURN_RATE;
-            const growthHSA = assetsHSA * CONSTANTS.RETURN_RATE;
+            const growthPre = assetsPreTax * this.returnRate;
+            const growthPost = assetsPostTax * this.returnRate;
+            const growthRoth = assetsRoth * this.returnRate;
+            const growthHSA = assetsHSA * this.returnRate;
 
             assetsPreTax += growthPre;
             assetsPostTax += growthPost;
+            assetsRoth += growthRoth;
             assetsHSA += growthHSA;
 
             history.push({
@@ -210,16 +248,16 @@ export class RetirementCalculator {
                 age: currentAge,
                 isRetired,
                 assetsStart,
-                investmentGrowth: growthPre + growthPost + growthHSA,
+                investmentGrowth: growthPre + growthPost + growthRoth + growthHSA,
                 income: laborIncome + socialSecurity,
-                withdrawals: withdrawnPostTax + withdrawnPreTax + healthcarePaidByHSA,
+                withdrawals: withdrawnPostTax + withdrawnPreTax + withdrawnRoth + healthcarePaidByHSA,
                 taxes,
                 healthcare,
                 expenses,
-                assetsEnd: assetsPreTax + assetsPostTax + assetsHSA
+                assetsEnd: assetsPreTax + assetsPostTax + assetsRoth + assetsHSA
             });
 
-            if (assetsPreTax + assetsPostTax + assetsHSA < 0) {
+            if (assetsPreTax + assetsPostTax + assetsRoth + assetsHSA < 0) {
                 break;
             }
 

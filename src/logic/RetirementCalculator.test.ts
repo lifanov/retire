@@ -10,12 +10,14 @@ describe('RetirementCalculator', () => {
         lifeExpectancy: 85,
         savingsPreTax: 100000,
         savingsPostTax: 50000,
+        savingsRoth: 0,
         savingsHSA: 0,
         annualIncome: 80000,
         annualExpenses: 50000,
         socialSecurityAt67: 25000,
         socialSecurityStartAge: 67,
-        state: 'CA'
+        state: 'CA',
+        filingStatus: 'single'
     };
 
     it('should calculate solvent simulation correctly', () => {
@@ -27,11 +29,12 @@ describe('RetirementCalculator', () => {
     });
 
     it('should use HSA for healthcare costs first', () => {
-        const hsaInputs = {
+        const hsaInputs: SimulationInputs = {
             ...baseInputs,
             savingsHSA: 1000000, // Large HSA should cover healthcare
             savingsPreTax: 0,
             savingsPostTax: 0,
+            savingsRoth: 0,
             annualIncome: 0, // No income
             retirementAge: 30 // Retired immediately
         };
@@ -54,11 +57,11 @@ describe('RetirementCalculator', () => {
 
     it('should adjust healthcare costs by state multiplier', () => {
         // Test CA (High cost) vs AL (Low cost)
-        const inputsCA = { ...baseInputs, state: 'CA', currentAge: 50, retirementAge: 50 };
+        const inputsCA: SimulationInputs = { ...baseInputs, state: 'CA', currentAge: 50, retirementAge: 50 };
         const resultCA = new RetirementCalculator(inputsCA).simulate();
         const healthcareCA = resultCA.history[0].healthcare;
 
-        const inputsAL = { ...baseInputs, state: 'AL', currentAge: 50, retirementAge: 50 };
+        const inputsAL: SimulationInputs = { ...baseInputs, state: 'AL', currentAge: 50, retirementAge: 50 };
         const resultAL = new RetirementCalculator(inputsAL).simulate();
         const healthcareAL = resultAL.history[0].healthcare;
 
