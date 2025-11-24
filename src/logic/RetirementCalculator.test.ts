@@ -10,6 +10,7 @@ describe('RetirementCalculator', () => {
         lifeExpectancy: 85,
         savingsPreTax: 100000,
         savingsPostTax: 50000,
+        savingsRoth: 0,
         savingsHSA: 0,
         annualIncome: 80000,
         annualExpenses: 50000,
@@ -33,6 +34,7 @@ describe('RetirementCalculator', () => {
             savingsHSA: 1000000, // Large HSA should cover healthcare
             savingsPreTax: 0,
             savingsPostTax: 0,
+            savingsRoth: 0,
             annualIncome: 0, // No income
             retirementAge: 30 // Retired immediately
         };
