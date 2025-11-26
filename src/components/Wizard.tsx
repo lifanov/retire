@@ -48,6 +48,22 @@ interface Props {
     onComplete: () => void;
 }
 
+const StartOverLink: React.FC<{ setData: (d: WizardData) => void }> = ({ setData }) => (
+    <button
+        onClick={() => setData(DEFAULT_WIZARD_DATA)}
+        className="absolute top-4 right-6 text-xs text-gray-400 hover:text-gray-600 underline"
+    >
+        Start Over
+    </button>
+);
+
+const Wrapper: React.FC<{ children: React.ReactNode; setData: (d: WizardData) => void }> = ({ children, setData }) => (
+    <div className="max-w-md mx-auto mt-10 p-6 bg-white shadow rounded relative">
+        <StartOverLink setData={setData} />
+        {children}
+    </div>
+);
+
 export const Wizard: React.FC<Props> = ({ data, setData, onComplete }) => {
     const update = (field: keyof WizardData, value: any) => {
         setData({ ...data, [field]: value });
@@ -58,7 +74,7 @@ export const Wizard: React.FC<Props> = ({ data, setData, onComplete }) => {
     // Step 0: Target Date
     if (data.step === 0) {
         return (
-            <div className="max-w-md mx-auto mt-10 p-6 bg-white shadow rounded">
+            <Wrapper setData={setData}>
                 <h2 className="text-2xl font-bold mb-4">When do you want to retire?</h2>
                 <Input
                     label="Target Retirement Date"
@@ -73,14 +89,14 @@ export const Wizard: React.FC<Props> = ({ data, setData, onComplete }) => {
                 >
                     Next
                 </button>
-            </div>
+            </Wrapper>
         );
     }
 
     // Step 1: Personal Info
     if (data.step === 1) {
         return (
-            <div className="max-w-md mx-auto mt-10 p-6 bg-white shadow rounded">
+            <Wrapper setData={setData}>
                 <h2 className="text-2xl font-bold mb-4">Tell us about yourself</h2>
                 <Input
                     label="Current Age"
@@ -95,14 +111,14 @@ export const Wizard: React.FC<Props> = ({ data, setData, onComplete }) => {
                     onChange={e => update('state', e.target.value)}
                 />
                 <button onClick={next} className="w-full bg-blue-600 text-white p-3 rounded">Next</button>
-            </div>
+            </Wrapper>
         );
     }
 
     // Step 2: Tax Filing Status (New Step)
     if (data.step === 2) {
         return (
-            <div className="max-w-md mx-auto mt-10 p-6 bg-white shadow rounded">
+            <Wrapper setData={setData}>
                 <h2 className="text-2xl font-bold mb-4">Tax Filing Status</h2>
                 <Select
                     label="Filing Status"
@@ -111,14 +127,14 @@ export const Wizard: React.FC<Props> = ({ data, setData, onComplete }) => {
                     onChange={e => update('filingStatus', e.target.value)}
                 />
                 <button onClick={next} className="w-full bg-blue-600 text-white p-3 rounded mt-4">Next</button>
-            </div>
+            </Wrapper>
         );
     }
 
     // Step 3: Financials
     if (data.step === 3) {
         return (
-            <div className="max-w-md mx-auto mt-10 p-6 bg-white shadow rounded">
+            <Wrapper setData={setData}>
                 <h2 className="text-2xl font-bold mb-4">Financial Situation</h2>
                 <Input
                     label="Annual Household Income ($)"
@@ -133,7 +149,7 @@ export const Wizard: React.FC<Props> = ({ data, setData, onComplete }) => {
                     onChange={e => update('annualExpenses', parseFloat(e.target.value))}
                 />
                 <button onClick={next} className="w-full bg-blue-600 text-white p-3 rounded">Next</button>
-            </div>
+            </Wrapper>
         );
     }
 
@@ -193,17 +209,22 @@ export const Wizard: React.FC<Props> = ({ data, setData, onComplete }) => {
                  }
              }
 
-             if (skipHSA || hsaInput === '') {
-                 update('savingsHSA', 0);
-             } else {
-                 update('savingsHSA', hsaInput);
+             // Fix: Combined update to avoid stale closure issues with multiple setState calls
+             let newHSA = 0;
+             if (!skipHSA && hsaInput !== '') {
+                 newHSA = typeof hsaInput === 'number' ? hsaInput : parseFloat(hsaInput);
              }
+
              setError(null);
-             next();
+             setData({
+                 ...data,
+                 savingsHSA: newHSA,
+                 step: data.step + 1
+             });
         };
 
         return (
-            <div className="max-w-md mx-auto mt-10 p-6 bg-white shadow rounded">
+            <Wrapper setData={setData}>
                 <h2 className="text-2xl font-bold mb-4">Current Savings</h2>
 
                 <div className="mb-6">
@@ -286,14 +307,14 @@ export const Wizard: React.FC<Props> = ({ data, setData, onComplete }) => {
                         Next
                     </button>
                 </div>
-            </div>
+            </Wrapper>
         );
     }
 
     // Step 5: Social Security
     if (data.step === 5) {
         return (
-            <div className="max-w-md mx-auto mt-10 p-6 bg-white shadow rounded">
+            <Wrapper setData={setData}>
                 <h2 className="text-2xl font-bold mb-4">Social Security</h2>
                 <p className="mb-4 text-sm text-gray-500">Estimate your annual benefit at age 67. You can find this on ssa.gov.</p>
                 <Input
@@ -306,7 +327,7 @@ export const Wizard: React.FC<Props> = ({ data, setData, onComplete }) => {
                     <button onClick={onComplete} className="flex-1 bg-green-600 text-white p-3 rounded font-bold">Calculate</button>
                     <button onClick={onComplete} className="flex-1 bg-gray-200 text-gray-800 p-3 rounded">Skip (Use Estimate)</button>
                 </div>
-            </div>
+            </Wrapper>
         );
     }
 

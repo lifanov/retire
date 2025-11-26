@@ -42,22 +42,54 @@ const SliderRow: React.FC<{
     </div>
 );
 
-const SavingsGraph: React.FC<{ history: SimulationResult['history'] }> = ({ history }) => {
-    // Transform data for lighter payload if needed, but history is small enough
-    const data = history.map(h => ({
-        age: h.age,
-        netWorth: Math.round(h.assetsEnd),
-        year: h.year
-    }));
+const SavingsGraph: React.FC<{ history: SimulationResult['history'], withdrawalRate: number }> = ({ history, withdrawalRate }) => {
+    const data = history.map(h => {
+        const safeLimit = h.assetsStart * withdrawalRate;
+        // Expenses + Healthcare + Taxes is total outflow. User said "expenses exceed safe withdrawal rate".
+        // Usually safe withdrawal covers living expenses.
+        // I will use `h.expenses` (living) + `h.healthcare` as the metric to compare against Safe Limit.
+        // Taxes are a consequence, but usually SWR covers gross withdrawals.
+        // Let's compare Total Outflow (Expenses + Healthcare + Taxes) vs Safe Limit?
+        // Or just Living Expenses?
+        // SWR usually implies "Total Withdrawal".
+        const totalWithdrawalNeeded = h.expenses + h.healthcare + h.taxes;
+
+        return {
+            age: h.age,
+            netWorth: Math.round(h.assetsEnd),
+            year: h.year,
+            expenses: Math.round(totalWithdrawalNeeded),
+            safeLimit: Math.round(safeLimit),
+            isUnsafe: totalWithdrawalNeeded > safeLimit
+        };
+    });
+
+    // Calculate gradient offset
+    const gradientOffset = () => {
+        if (data.length <= 1) return 0;
+        const firstUnsafeIndex = data.findIndex(d => d.isUnsafe);
+
+        if (firstUnsafeIndex === -1) return 1; // All safe -> Blue (offset 1)
+
+        // Gradient runs from 0 (left) to 1 (right).
+        // If index 0 is unsafe, return 0 (Blue stops at 0).
+        return firstUnsafeIndex / (data.length - 1);
+    };
+
+    const off = gradientOffset();
 
     return (
         <div className="h-64 w-full mt-4">
             <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                     <defs>
-                        <linearGradient id="colorNetWorth" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#2563eb" stopOpacity={0.8}/>
-                            <stop offset="95%" stopColor="#2563eb" stopOpacity={0}/>
+                        <linearGradient id="splitColor" x1="0" y1="0" x2="1" y2="0">
+                            <stop offset={off} stopColor="#2563eb" stopOpacity={1}/>
+                            <stop offset={off} stopColor="#ea580c" stopOpacity={1}/>
+                        </linearGradient>
+                         <linearGradient id="splitColorFill" x1="0" y1="0" x2="1" y2="0">
+                            <stop offset={off} stopColor="#2563eb" stopOpacity={0.8}/>
+                            <stop offset={off} stopColor="#ea580c" stopOpacity={0.8}/>
                         </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -67,15 +99,33 @@ const SavingsGraph: React.FC<{ history: SimulationResult['history'] }> = ({ hist
                         width={60}
                     />
                     <Tooltip
-                        formatter={(value: number) => [`$${value.toLocaleString()}`, 'Net Worth']}
                         labelFormatter={(label) => `Age ${label}`}
+                        content={({ active, payload, label }) => {
+                            if (active && payload && payload.length) {
+                                const d = payload[0].payload;
+                                return (
+                                    <div className="bg-white p-3 border shadow rounded opacity-95 text-sm">
+                                        <p className="font-bold mb-1">Age {label}</p>
+                                        <p className="text-blue-700">Net Worth: ${d.netWorth.toLocaleString()}</p>
+                                        <div className="mt-2 pt-2 border-t">
+                                            <p className="text-gray-600">Safe Limit: ${d.safeLimit.toLocaleString()}</p>
+                                            <p className={`font-semibold ${d.isUnsafe ? 'text-orange-600' : 'text-green-600'}`}>
+                                                Est. Withdrawal: ${d.expenses.toLocaleString()}
+                                            </p>
+                                        </div>
+                                        {d.isUnsafe && <p className="text-xs text-orange-500 mt-1 italic">Exceeds safe rate</p>}
+                                    </div>
+                                );
+                            }
+                            return null;
+                        }}
                     />
                     <Area
                         type="monotone"
                         dataKey="netWorth"
-                        stroke="#2563eb"
+                        stroke="url(#splitColor)"
                         fillOpacity={1}
-                        fill="url(#colorNetWorth)"
+                        fill="url(#splitColorFill)"
                     />
                 </AreaChart>
             </ResponsiveContainer>
@@ -245,7 +295,7 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
 
                 <div className="mt-8 border-t pt-8">
                     <h4 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-2 text-center">Total Net Worth Over Time</h4>
-                    <SavingsGraph history={result.history} />
+                    <SavingsGraph history={result.history} withdrawalRate={withdrawalRate} />
                 </div>
             </div>
 
