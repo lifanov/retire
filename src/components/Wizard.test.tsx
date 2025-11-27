@@ -1,8 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { Wizard, DEFAULT_WIZARD_DATA, type WizardData } from './Wizard';
 import userEvent from '@testing-library/user-event';
-import React from 'react';
 
 describe('Wizard Component', () => {
     it('should update HSA savings and advance step correctly in Step 4', async () => {
@@ -28,13 +27,9 @@ describe('Wizard Component', () => {
         await user.click(editBtn);
 
         // 2. Enter HSA Amount
-        // Note: We removed data-testid, so we find by role.
-        // There are 5 inputs visible (Total, Pre, Roth, Post, HSA).
         const inputs = screen.getAllByRole('spinbutton');
         const hsaInput = inputs[inputs.length - 1];
 
-        // Use user.type to simulate real typing.
-        // This validates that focus is maintained (if it lost focus, typing would be interrupted).
         await user.type(hsaInput, '50000');
 
         // 3. Click Next
@@ -60,7 +55,7 @@ describe('Wizard Component', () => {
         );
 
         const startOverLink = screen.getByText(/Start Over/i);
-        expect(startOverLink).toBeInTheDocument();
+        expect(startOverLink).toBeTruthy();
 
         await user.click(startOverLink);
 
