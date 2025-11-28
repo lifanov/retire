@@ -42,17 +42,13 @@ const SliderRow: React.FC<{
     </div>
 );
 
-const SavingsGraph: React.FC<{ history: SimulationResult['history'], withdrawalRate: number }> = ({ history, withdrawalRate }) => {
+const SavingsGraph: React.FC<{ history: SimulationResult['history'], withdrawalRate: number, showWithdrawals: boolean }> = ({ history, withdrawalRate, showWithdrawals }) => {
     const data = history.map(h => {
         const safeLimit = h.assetsStart * withdrawalRate;
-        // Expenses + Healthcare + Taxes is total outflow. User said "expenses exceed safe withdrawal rate".
-        // Usually safe withdrawal covers living expenses.
-        // I will use `h.expenses` (living) + `h.healthcare` as the metric to compare against Safe Limit.
-        // Taxes are a consequence, but usually SWR covers gross withdrawals.
-        // Let's compare Total Outflow (Expenses + Healthcare + Taxes) vs Safe Limit?
-        // Or just Living Expenses?
-        // SWR usually implies "Total Withdrawal".
         const totalWithdrawalNeeded = h.expenses + h.healthcare + h.taxes;
+
+        const safeLineValue = Math.min(totalWithdrawalNeeded, safeLimit);
+        const unsafeLineValue = totalWithdrawalNeeded > safeLimit ? totalWithdrawalNeeded : null;
 
         return {
             age: h.age,
@@ -60,38 +56,16 @@ const SavingsGraph: React.FC<{ history: SimulationResult['history'], withdrawalR
             year: h.year,
             expenses: Math.round(totalWithdrawalNeeded),
             safeLimit: Math.round(safeLimit),
-            isUnsafe: totalWithdrawalNeeded > safeLimit
+            isUnsafe: totalWithdrawalNeeded > safeLimit,
+            safeLineValue: Math.round(safeLineValue),
+            unsafeLineValue: unsafeLineValue ? Math.round(unsafeLineValue) : null
         };
     });
-
-    // Calculate gradient offset
-    const gradientOffset = () => {
-        if (data.length <= 1) return 0;
-        const firstUnsafeIndex = data.findIndex(d => d.isUnsafe);
-
-        if (firstUnsafeIndex === -1) return 1; // All safe -> Blue (offset 1)
-
-        // Gradient runs from 0 (left) to 1 (right).
-        // If index 0 is unsafe, return 0 (Blue stops at 0).
-        return firstUnsafeIndex / (data.length - 1);
-    };
-
-    const off = gradientOffset();
 
     return (
         <div className="h-64 w-full mt-4">
             <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                    <defs>
-                        <linearGradient id="splitColor" x1="0" y1="0" x2="1" y2="0">
-                            <stop offset={off} stopColor="#2563eb" stopOpacity={1}/>
-                            <stop offset={off} stopColor="#ea580c" stopOpacity={1}/>
-                        </linearGradient>
-                         <linearGradient id="splitColorFill" x1="0" y1="0" x2="1" y2="0">
-                            <stop offset={off} stopColor="#2563eb" stopOpacity={0.8}/>
-                            <stop offset={off} stopColor="#ea580c" stopOpacity={0.8}/>
-                        </linearGradient>
-                    </defs>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
                     <XAxis dataKey="age" label={{ value: 'Age', position: 'insideBottom', offset: -5 }} />
                     <YAxis
@@ -109,11 +83,11 @@ const SavingsGraph: React.FC<{ history: SimulationResult['history'], withdrawalR
                                         <p className="text-blue-700">Net Worth: ${d.netWorth.toLocaleString()}</p>
                                         <div className="mt-2 pt-2 border-t">
                                             <p className="text-gray-600">Safe Limit: ${d.safeLimit.toLocaleString()}</p>
-                                            <p className={`font-semibold ${d.isUnsafe ? 'text-orange-600' : 'text-green-600'}`}>
+                                            <p className={`font-semibold ${d.isUnsafe ? 'text-red-600' : 'text-green-600'}`}>
                                                 Est. Withdrawal: ${d.expenses.toLocaleString()}
                                             </p>
                                         </div>
-                                        {d.isUnsafe && <p className="text-xs text-orange-500 mt-1 italic">Exceeds safe rate</p>}
+                                        {d.isUnsafe && <p className="text-xs text-red-500 mt-1 italic">Exceeds safe rate</p>}
                                     </div>
                                 );
                             }
@@ -123,10 +97,30 @@ const SavingsGraph: React.FC<{ history: SimulationResult['history'], withdrawalR
                     <Area
                         type="monotone"
                         dataKey="netWorth"
-                        stroke="url(#splitColor)"
-                        fillOpacity={1}
-                        fill="url(#splitColorFill)"
+                        stroke="#2563eb"
+                        fillOpacity={0.8}
+                        fill="#2563eb"
                     />
+                    {showWithdrawals && (
+                        <>
+                            <Area
+                                type="monotone"
+                                dataKey="safeLineValue"
+                                stroke="#16a34a"
+                                fill="none"
+                                strokeWidth={2}
+                                isAnimationActive={false}
+                            />
+                            <Area
+                                type="monotone"
+                                dataKey="unsafeLineValue"
+                                stroke="#dc2626"
+                                fill="none"
+                                strokeWidth={2}
+                                isAnimationActive={false}
+                            />
+                        </>
+                    )}
                 </AreaChart>
             </ResponsiveContainer>
         </div>
@@ -145,8 +139,9 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
             currentAge: initialData.currentAge,
             retirementAge: retirementAge,
             lifeExpectancy: 90,
+            savingsCash: initialData.savingsCash,
             savingsPreTax: initialData.savingsPreTax,
-            savingsPostTax: initialData.savingsPostTax,
+            investmentsPostTax: initialData.investmentsPostTax,
             savingsRoth: initialData.savingsRoth,
             savingsHSA: initialData.savingsHSA,
             annualIncome: initialData.annualIncome,
@@ -163,6 +158,7 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
 
     const [tweakAssumptions, setTweakAssumptions] = useState(false);
     const [withdrawalRate, setWithdrawalRate] = useState(0.04);
+    const [showWithdrawals, setShowWithdrawals] = useState(false);
 
     const result: SimulationResult = useMemo(() => {
         const calculator = new RetirementCalculator(simInputs);
@@ -172,8 +168,6 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
     const feasibleRetirementDate: number | null = useMemo(() => {
         if (result.isSolvent) return null;
 
-        // Try to find a feasible date by incrementing retirement age
-        // Limit search to age 80 to avoid infinite loops or unrealistic suggestions
         for (let age = simInputs.retirementAge + 1; age <= 80; age++) {
              const testInputs = { ...simInputs, retirementAge: age };
              const calc = new RetirementCalculator(testInputs);
@@ -186,7 +180,6 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
 
     const formatMoney = (n: number) => `$${Math.round(n).toLocaleString()}`;
 
-    // Derived Formula Values (First year of retirement snapshot or simplified view)
     const retirementYearData = result.history.find(h => h.isRetired) || result.history[result.history.length-1];
 
     const scrollTo = (id: string) => {
@@ -208,7 +201,7 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
     );
 
     const safeWithdrawal = (retirementYearData.assetsStart * withdrawalRate);
-    const totalIncome = safeWithdrawal + retirementYearData.income; // SW + SS
+    const totalIncome = safeWithdrawal + retirementYearData.income;
     const totalOutflow = retirementYearData.expenses + retirementYearData.healthcare + retirementYearData.taxes;
     const surplus = totalIncome - totalOutflow;
 
@@ -295,7 +288,7 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
 
                 <div className="mt-8 border-t pt-8">
                     <h4 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-2 text-center">Total Net Worth Over Time</h4>
-                    <SavingsGraph history={result.history} withdrawalRate={withdrawalRate} />
+                    <SavingsGraph history={result.history} withdrawalRate={withdrawalRate} showWithdrawals={showWithdrawals} />
                 </div>
             </div>
 
@@ -333,6 +326,16 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
                     />
 
                      <SliderRow
+                        label="Cash / HYSA"
+                        value={simInputs.savingsCash}
+                        min={0}
+                        max={1000000}
+                        step={1000}
+                        onChange={v => setSimInputs({...simInputs, savingsCash: v})}
+                        format={formatMoney}
+                    />
+
+                     <SliderRow
                         label="Savings (Pre-Tax)"
                         value={simInputs.savingsPreTax}
                         min={0}
@@ -353,12 +356,12 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
                     />
 
                      <SliderRow
-                        label="Savings (Post-Tax)"
-                        value={simInputs.savingsPostTax}
+                        label="Investments (Post-Tax)"
+                        value={simInputs.investmentsPostTax}
                         min={0}
                         max={2000000}
                         step={5000}
-                        onChange={v => setSimInputs({...simInputs, savingsPostTax: v})}
+                        onChange={v => setSimInputs({...simInputs, investmentsPostTax: v})}
                         format={formatMoney}
                     />
 
@@ -416,7 +419,20 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
                                     {selectedStateData.income_tax.type === 'progressive' && (
                                         <p><span className="font-semibold">Top Rate:</span> {((selectedStateData.income_tax.brackets![selectedStateData.income_tax.brackets!.length - 1].rate) * 100).toFixed(2)}%</p>
                                     )}
-                                    <p className="mt-1"><span className="font-semibold">Healthcare Cost Factor:</span> {stateHealthcareMultiplier}x</p>
+
+                                    {selectedStateData.capital_gains_tax && (
+                                        <div className="mt-1 border-t border-gray-200 pt-1">
+                                            <p><span className="font-semibold">Cap Gains:</span> {selectedStateData.capital_gains_tax.type.replace(/_/g, ' ')}</p>
+                                            {selectedStateData.capital_gains_tax.type === 'flat' && (
+                                                <p><span className="font-semibold">Rate:</span> {(selectedStateData.capital_gains_tax.rate! * 100).toFixed(2)}%</p>
+                                            )}
+                                            {selectedStateData.capital_gains_tax.type === 'progressive' && (
+                                                 <p><span className="font-semibold">Top Rate:</span> {((selectedStateData.capital_gains_tax.brackets![selectedStateData.capital_gains_tax.brackets!.length - 1].rate) * 100).toFixed(2)}%</p>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    <p className="mt-1 pt-1 border-t border-gray-200"><span className="font-semibold">Healthcare Cost Factor:</span> {stateHealthcareMultiplier}x</p>
                                 </div>
                             )}
                          </div>
@@ -487,6 +503,16 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
                                  ) : (
                                     <span className="font-mono text-right">{(withdrawalRate * 100).toFixed(1)}%</span>
                                  )}
+
+                                 <span className="text-gray-600">Show Withdrawal Lines</span>
+                                 <div className="flex justify-end">
+                                     <input
+                                         type="checkbox"
+                                         checked={showWithdrawals}
+                                         onChange={e => setShowWithdrawals(e.target.checked)}
+                                         className="rounded text-blue-600 focus:ring-blue-500 h-5 w-5"
+                                     />
+                                 </div>
                              </div>
                          </div>
 

@@ -55,24 +55,24 @@ export class RetirementCalculator {
         return realizedGains * rate;
     }
 
-    private calculateStateTax(taxableIncome: number, stateCode: string): number {
-        const stateData = stateTaxData[stateCode];
-        if (!stateData || stateData.income_tax.type === 'none') return 0;
+    private calculateTaxForStructure(amount: number, taxConfig: any): number {
+        if (!taxConfig || taxConfig.type === 'none') return 0;
+        if (amount <= 0) return 0;
 
-        if (stateData.income_tax.type === 'flat') {
-            return taxableIncome * (stateData.income_tax.rate || 0);
+        if (taxConfig.type === 'flat') {
+            return amount * (taxConfig.rate || 0);
         }
 
-        if (stateData.income_tax.type === 'progressive' && stateData.income_tax.brackets) {
+        if (taxConfig.type === 'progressive' && taxConfig.brackets) {
             let tax = 0;
-            const brackets = stateData.income_tax.brackets;
+            const brackets = taxConfig.brackets;
             for (let i = 0; i < brackets.length; i++) {
                 const current = brackets[i];
                 const next = brackets[i+1];
                 const max = next ? next.min : Infinity;
 
-                if (taxableIncome > current.min) {
-                    const taxableInBracket = Math.min(taxableIncome, max) - current.min;
+                if (amount > current.min) {
+                    const taxableInBracket = Math.min(amount, max) - current.min;
                     tax += taxableInBracket * current.rate;
                 }
             }
@@ -82,20 +82,48 @@ export class RetirementCalculator {
         return 0;
     }
 
+    private calculateStateTax(ordinaryIncome: number, capitalGains: number, stateCode: string): number {
+        const stateData = stateTaxData[stateCode];
+        if (!stateData) return 0;
+
+        const capGainsConfig = stateData.capital_gains_tax;
+
+        // If no specific cap gains config, or set to same_as_income, combine them
+        if (!capGainsConfig || capGainsConfig.type === 'same_as_income') {
+            const totalTaxable = ordinaryIncome + capitalGains;
+            return this.calculateTaxForStructure(totalTaxable, stateData.income_tax);
+        }
+
+        // Otherwise calculate separately
+        const incomeTax = this.calculateTaxForStructure(ordinaryIncome, stateData.income_tax);
+        const capGainsTax = this.calculateTaxForStructure(capitalGains, capGainsConfig);
+
+        return incomeTax + capGainsTax;
+    }
+
     private calculateHealthcareCost(age: number, currentYear: number, stateCode: string): number {
-        let baseCost = 0;
+        let annualCost = 0;
+        const yearsPassed = currentYear - new Date().getFullYear();
+        const inflationFactor = Math.pow(1 + this.healthcareInflationRate, yearsPassed);
+
         if (age >= CONSTANTS.MEDICARE_AGE) {
-            baseCost = healthcareDataRaw.medicare_annual_cost.total;
+            annualCost = healthcareDataRaw.medicare_annual_cost.total * inflationFactor;
         } else {
             const stateMultiplier = (healthcareDataRaw.state_multipliers as Record<string, number>)[stateCode] || 1.0;
 
-            baseCost = healthcareDataRaw.pre_medicare_annual_cost.base
+            // Base Premium
+            const basePremium = healthcareDataRaw.pre_medicare_annual_cost.base
                 * (1 + (age * healthcareDataRaw.pre_medicare_annual_cost.age_multiplier))
-                * stateMultiplier;
+                * stateMultiplier
+                * inflationFactor;
+
+            // Deductible (also inflated)
+            const deductible = ((healthcareDataRaw.pre_medicare_annual_cost as any).deductible || 0) * inflationFactor;
+
+            annualCost = basePremium + deductible;
         }
 
-        const yearsPassed = currentYear - new Date().getFullYear();
-        return baseCost * Math.pow(1 + this.healthcareInflationRate, yearsPassed);
+        return annualCost;
     }
 
     public simulate(): SimulationResult {
@@ -103,14 +131,15 @@ export class RetirementCalculator {
         let currentYear = new Date().getFullYear();
         let currentAge = this.inputs.currentAge;
 
+        let assetsCash = this.inputs.savingsCash;
         let assetsPreTax = this.inputs.savingsPreTax;
-        let assetsPostTax = this.inputs.savingsPostTax;
+        let assetsPostTax = this.inputs.investmentsPostTax;
         let assetsRoth = this.inputs.savingsRoth;
         let assetsHSA = this.inputs.savingsHSA;
 
         while (currentAge <= this.inputs.lifeExpectancy) {
             const isRetired = currentAge >= this.inputs.retirementAge;
-            const assetsStart = assetsPreTax + assetsPostTax + assetsRoth + assetsHSA;
+            const assetsStart = assetsCash + assetsPreTax + assetsPostTax + assetsRoth + assetsHSA;
 
             // 1. Determine Income (Inflows)
             let laborIncome = 0;
@@ -129,6 +158,12 @@ export class RetirementCalculator {
                     socialSecurity = benefit * Math.pow(1 + this.inflationRate, currentYear - new Date().getFullYear());
                 }
             }
+
+            // Cash Interest (Yield) is treated as Ordinary Income
+            // Assuming Cash yields Inflation Rate
+            const cashYield = assetsCash * this.inflationRate;
+            // Note: We add this to ordinaryIncome for tax purposes.
+            // We also add it to the asset balance in step 6 (Growth).
 
             // 2. Determine Expenses (Outflows)
             let expenses = this.inputs.annualExpenses * Math.pow(1 + this.inflationRate, currentYear - new Date().getFullYear());
@@ -154,90 +189,122 @@ export class RetirementCalculator {
             const grossNeeds = expenses + remainingHealthcare;
 
             // 5. Withdrawal Strategy & Taxes
-            let withdrawalNeeded = Math.max(0, grossNeeds - (laborIncome + socialSecurity));
-            let savingsContribution = Math.max(0, (laborIncome + socialSecurity) - grossNeeds);
+            const totalFixedIncome = laborIncome + socialSecurity; // We exclude cashYield here as it's retained in the asset until withdrawal?
+            // Actually, interest is income available to spend.
+            // If we don't spend it, it compounds.
+            // Let's assume we use the cashYield to pay expenses first?
+            // Or simpler: We calculate `withdrawalNeeded`.
+            // The `cashYield` is "Growth".
+            // Taxes are calculated on `cashYield` regardless.
+
+            let withdrawalNeeded = Math.max(0, grossNeeds - totalFixedIncome);
+            let savingsContribution = Math.max(0, totalFixedIncome - grossNeeds);
 
             let taxes = 0;
 
+            let withdrawnCash = 0;
             let withdrawnPreTax = 0;
             let withdrawnPostTax = 0;
             let withdrawnRoth = 0;
             let realizedGains = 0;
 
-            // Withdrawal Order: Post-Tax -> Pre-Tax -> Roth
+            // Withdrawal Order: Cash -> Investments (Post-Tax) -> Pre-Tax -> Roth
             if (withdrawalNeeded > 0) {
-                // Take from Post Tax
-                if (assetsPostTax > withdrawalNeeded) {
-                    withdrawnPostTax = withdrawalNeeded;
-                    assetsPostTax -= withdrawalNeeded;
-                    realizedGains = withdrawnPostTax * 0.5;
+                // Take from Cash
+                if (assetsCash > withdrawalNeeded) {
+                    withdrawnCash = withdrawalNeeded;
+                    assetsCash -= withdrawalNeeded;
                 } else {
-                    withdrawnPostTax = assetsPostTax;
-                    realizedGains = withdrawnPostTax * 0.5;
-                    withdrawalNeeded -= assetsPostTax;
-                    assetsPostTax = 0;
+                    withdrawnCash = assetsCash;
+                    withdrawalNeeded -= assetsCash;
+                    assetsCash = 0;
 
-                    // Take from Pre Tax
-                    if (assetsPreTax > withdrawalNeeded) {
-                        withdrawnPreTax = withdrawalNeeded;
-                        assetsPreTax -= withdrawalNeeded;
+                    // Take from Investments (Post-Tax)
+                    if (assetsPostTax > withdrawalNeeded) {
+                        withdrawnPostTax = withdrawalNeeded;
+                        assetsPostTax -= withdrawalNeeded;
+                        realizedGains = withdrawnPostTax * 0.5;
                     } else {
-                        withdrawnPreTax = assetsPreTax;
-                        withdrawalNeeded -= assetsPreTax;
-                        assetsPreTax = 0;
+                        withdrawnPostTax = assetsPostTax;
+                        realizedGains = withdrawnPostTax * 0.5;
+                        withdrawalNeeded -= assetsPostTax;
+                        assetsPostTax = 0;
 
-                        // Take from Roth
-                        if (assetsRoth > withdrawalNeeded) {
-                            withdrawnRoth = withdrawalNeeded;
-                            assetsRoth -= withdrawalNeeded;
+                        // Take from Pre Tax
+                        if (assetsPreTax > withdrawalNeeded) {
+                            withdrawnPreTax = withdrawalNeeded;
+                            assetsPreTax -= withdrawalNeeded;
                         } else {
-                            withdrawnRoth = assetsRoth;
-                            assetsRoth = 0;
+                            withdrawnPreTax = assetsPreTax;
+                            withdrawalNeeded -= assetsPreTax;
+                            assetsPreTax = 0;
+
+                            // Take from Roth
+                            if (assetsRoth > withdrawalNeeded) {
+                                withdrawnRoth = withdrawalNeeded;
+                                assetsRoth -= withdrawalNeeded;
+                            } else {
+                                withdrawnRoth = assetsRoth;
+                                assetsRoth = 0;
+                            }
                         }
                     }
                 }
             }
 
             if (savingsContribution > 0) {
+                // Add to Investments Post Tax (Taxable)
                 assetsPostTax += savingsContribution;
             }
 
             // Calculate Tax Bill
-            const ordinaryIncome = laborIncome + withdrawnPreTax + (socialSecurity * 0.85);
+            // Ordinary Income includes Cash Yield (Interest)
+            const ordinaryIncome = laborIncome + withdrawnPreTax + (socialSecurity * 0.85) + cashYield;
             const standardDeduction = federalTaxData.standard_deduction[this.inputs.filingStatus];
 
             const taxableOrdinaryIncome = Math.max(0, ordinaryIncome - standardDeduction);
 
             const fedTax = this.calculateFederalTax(taxableOrdinaryIncome, this.inputs.filingStatus);
-            const stateTax = this.calculateStateTax(taxableOrdinaryIncome, this.inputs.state);
+
+            // State Tax now includes Capital Gains explicitly
+            const stateTax = this.calculateStateTax(taxableOrdinaryIncome, realizedGains, this.inputs.state);
 
             const totalIncomeForCapGains = taxableOrdinaryIncome + realizedGains;
             const capGainsTax = this.calculateCapitalGainsTax(totalIncomeForCapGains, realizedGains, this.inputs.filingStatus);
 
             taxes = fedTax + stateTax + capGainsTax;
 
-            // Pay Taxes (prefer Post-Tax, then Pre-Tax, then Roth)
-            if (assetsPostTax >= taxes) {
-                assetsPostTax -= taxes;
+            // Pay Taxes (prefer Cash, then Post-Tax, then Pre-Tax, then Roth)
+            if (assetsCash >= taxes) {
+                assetsCash -= taxes;
             } else {
-                let remainingTax = taxes - assetsPostTax;
-                assetsPostTax = 0;
+                let remainingTax = taxes - assetsCash;
+                assetsCash = 0;
 
-                if (assetsPreTax >= remainingTax) {
-                     assetsPreTax -= remainingTax;
+                if (assetsPostTax >= remainingTax) {
+                    assetsPostTax -= remainingTax;
                 } else {
-                     remainingTax -= assetsPreTax;
-                     assetsPreTax = 0;
-                     assetsRoth -= remainingTax;
+                    remainingTax -= assetsPostTax;
+                    assetsPostTax = 0;
+
+                    if (assetsPreTax >= remainingTax) {
+                        assetsPreTax -= remainingTax;
+                    } else {
+                        remainingTax -= assetsPreTax;
+                        assetsPreTax = 0;
+                        assetsRoth -= remainingTax;
+                    }
                 }
             }
 
             // 6. Growth
+            const growthCash = cashYield; // Already calculated: assetsCash * inflationRate
             const growthPre = assetsPreTax * this.returnRate;
             const growthPost = assetsPostTax * this.returnRate;
             const growthRoth = assetsRoth * this.returnRate;
             const growthHSA = assetsHSA * this.returnRate;
 
+            assetsCash += growthCash;
             assetsPreTax += growthPre;
             assetsPostTax += growthPost;
             assetsRoth += growthRoth;
@@ -248,16 +315,16 @@ export class RetirementCalculator {
                 age: currentAge,
                 isRetired,
                 assetsStart,
-                investmentGrowth: growthPre + growthPost + growthRoth + growthHSA,
-                income: laborIncome + socialSecurity,
-                withdrawals: withdrawnPostTax + withdrawnPreTax + withdrawnRoth + healthcarePaidByHSA,
+                investmentGrowth: growthCash + growthPre + growthPost + growthRoth + growthHSA,
+                income: laborIncome + socialSecurity + cashYield,
+                withdrawals: withdrawnCash + withdrawnPostTax + withdrawnPreTax + withdrawnRoth + healthcarePaidByHSA,
                 taxes,
                 healthcare,
                 expenses,
-                assetsEnd: assetsPreTax + assetsPostTax + assetsRoth + assetsHSA
+                assetsEnd: assetsCash + assetsPreTax + assetsPostTax + assetsRoth + assetsHSA
             });
 
-            if (assetsPreTax + assetsPostTax + assetsRoth + assetsHSA < 0) {
+            if (assetsCash + assetsPreTax + assetsPostTax + assetsRoth + assetsHSA < 0) {
                 break;
             }
 
