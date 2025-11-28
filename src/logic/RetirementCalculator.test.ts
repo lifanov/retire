@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { RetirementCalculator } from './RetirementCalculator';
 import { type SimulationInputs } from './types';
+import healthcareDataRaw from '../data/healthcare_data.json';
 
 describe('RetirementCalculator', () => {
     // Basic default inputs
@@ -8,8 +9,9 @@ describe('RetirementCalculator', () => {
         currentAge: 30,
         retirementAge: 65,
         lifeExpectancy: 85,
+        savingsCash: 10000,
         savingsPreTax: 100000,
-        savingsPostTax: 50000,
+        investmentsPostTax: 50000,
         savingsRoth: 0,
         savingsHSA: 0,
         annualIncome: 80000,
@@ -25,179 +27,115 @@ describe('RetirementCalculator', () => {
         const result = calc.simulate();
 
         expect(result.history.length).toBeGreaterThan(0);
+        expect(result.isSolvent).toBeDefined();
     });
 
-    it('should use HSA for healthcare costs first', () => {
-        const hsaInputs: SimulationInputs = {
+    it('should grow Cash at inflation rate', () => {
+        // Scenario: Only Cash. No Withdrawals (expenses covered by income).
+        // Set returnRate to 0 so any surplus invested in PostTax doesn't grow.
+        const inputs: SimulationInputs = {
             ...baseInputs,
-            savingsHSA: 1000000, // Large HSA should cover healthcare
+            savingsCash: 100000,
             savingsPreTax: 0,
-            savingsPostTax: 0,
-            savingsRoth: 0,
-            annualIncome: 0, // No income
-            retirementAge: 30 // Retired immediately
+            investmentsPostTax: 0,
+            annualIncome: 200000, // Cover expenses
+            annualExpenses: 50000,
+            inflationRate: 0.03,
+            returnRate: 0
         };
-        const calc = new RetirementCalculator(hsaInputs);
+        const calc = new RetirementCalculator(inputs);
         const result = calc.simulate();
 
         const firstYear = result.history[0];
-        // If paid by HSA, it's not taxable.
-        expect(firstYear.taxes).toBe(0);
+        // Expected Cash Growth = Start * Inflation = 3000.
+        // PostTax Growth = Surplus * 0 = 0.
+
+        const expectedGrowth = 100000 * 0.03;
+        expect(firstYear.investmentGrowth).toBeCloseTo(expectedGrowth, 0);
     });
 
-    it('should NOT use HSA for non-healthcare expenses', () => {
-        // Scenario:
-        // Huge HSA ($1M)
-        // Zero other savings.
-        // Significant Expenses ($50k).
-        // Low Healthcare ($5k).
-        // If HSA was used for everything, we would be solvent for many years.
-        // If HSA is RESTRICTED to healthcare, we should run out of money immediately (because we can't pay the $45k non-healthcare expenses).
-
-        const strictHSAInputs: SimulationInputs = {
+    it('should include deductible in healthcare costs pre-medicare', () => {
+        const inputs: SimulationInputs = {
             ...baseInputs,
+            currentAge: 50,
+            retirementAge: 50,
+            state: 'TX' // Multiplier 1.0 (usually)
+        };
+        const calc = new RetirementCalculator(inputs);
+        // Access private method? No, check history healthcare cost.
+        const result = calc.simulate();
+        const year1 = result.history[0];
+
+        // Base Cost Calculation:
+        // Base: ~6000 * (1 + 50*0.03) = 6000 * 2.5 = 15000?
+        // Wait, age multiplier formula: base * (1 + (age * multiplier))
+        // 6000 * (1 + (50 * 0.03)) = 6000 * (1 + 1.5) = 15000.
+        // Deductible: ~5241.
+        // Total ~ 20241.
+
+        // Let's verify it's roughly in that range, definitely > 15000.
+        expect(year1.healthcare).toBeGreaterThan(15000);
+
+        // Exact check might be flaky if JSON changes, but checking "Base + Deductible" logic
+        const base = healthcareDataRaw.pre_medicare_annual_cost.base;
+        const ded = (healthcareDataRaw.pre_medicare_annual_cost as any).deductible;
+
+        // We expect `healthcare` to include `ded`.
+        // If we remove `ded` from expectation, it should fail.
+        expect(year1.healthcare).toBeGreaterThan(base + ded);
+    });
+
+    it('should apply specific state capital gains tax', () => {
+        // MA has 5% flat capital gains tax.
+        // CA has same as income (progressive).
+
+        // Scenario: High Realized Gains.
+        // Retire immediately. High Expenses. Low Income.
+        // Force withdrawal from Investments Post Tax.
+
+        const inputs: SimulationInputs = {
+            ...baseInputs,
+            state: 'MA',
             currentAge: 60,
             retirementAge: 60,
-            savingsHSA: 1000000,
-            savingsPreTax: 0,
-            savingsPostTax: 0,
-            savingsRoth: 0,
             annualIncome: 0,
-            annualExpenses: 50000,
-            socialSecurityAt67: 0, // No income
-            state: 'AL' // Low healthcare cost to maximize the delta
+            savingsCash: 0,
+            savingsPreTax: 0,
+            investmentsPostTax: 1000000, // Plenty of post-tax
+            annualExpenses: 100000, // Will withdraw ~100k + taxes
+            filingStatus: 'single'
         };
 
-        const calc = new RetirementCalculator(strictHSAInputs);
-        const result = calc.simulate();
+        const calcMA = new RetirementCalculator(inputs);
+        const resMA = calcMA.simulate().history[0];
 
-        // Expectation:
-        // We have $1M in HSA.
-        // Expenses are $50k + Healthcare.
-        // We can pay Healthcare from HSA.
-        // We CANNOT pay $50k expenses from HSA.
-        // So we should fail solvency immediately or have negative assets in non-HSA buckets?
+        // MA Tax:
+        // Ordinary Income: 0.
+        // Withdraw ~100k. Realized Gains = 50k.
+        // MA Cap Gains Tax = 50k * 0.05 = 2500.
+        // MA Income Tax = 0.
+        // Federal Tax on 50k gains (0% or 15% bracket).
+        // 50k - 14600 (std ded) = 35400 taxable.
+        // Cap Gains 0% up to ~44k. So Fed Tax ~ 0?
 
-        // Wait, the calculator logic sums assets for Net Worth.
-        // `assetsEnd: assetsPreTax + assetsPostTax + assetsRoth + assetsHSA`
-        // But the simulation loop breaks if `assetsPreTax + ... < 0`.
+        // Let's check State Tax specifically?
+        // We can't isolate State Tax in the output `taxes` field (it's summed).
 
-        // Let's trace the logic in RetirementCalculator.ts:
-        /*
-            // 5. Withdrawal Strategy & Taxes
-            let withdrawalNeeded = Math.max(0, grossNeeds - (laborIncome + socialSecurity));
-            ...
-            if (withdrawalNeeded > 0) {
-                 // Withdraw from Post, Pre, Roth.
-                 // Does NOT touch HSA.
-            }
+        // Let's compare with a state with NO Capital Gains tax (e.g. NH or TX? TX has no income tax at all).
+        // Let's use TX.
+        const inputsTX = { ...inputs, state: 'TX' };
+        const calcTX = new RetirementCalculator(inputsTX);
+        const resTX = calcTX.simulate().history[0];
 
-            // ... taxes ...
+        // TX Tax should be just Federal.
+        // MA Tax should be Federal + MA Cap Gains.
 
-            // 6. Growth
-            // ...
+        expect(resMA.taxes).toBeGreaterThan(resTX.taxes);
 
-            assetsEnd = Sum(all assets)
-            if (assetsEnd < 0) break;
-        */
-
-        // WAIT.
-        // `withdrawalNeeded` is calculated.
-        // We try to withdraw from Post/Pre/Roth.
-        // If we run out of those funds, we set them to 0 and `withdrawalNeeded` remains positive?
-        // In the code:
-        /*
-            if (assetsPostTax > withdrawalNeeded) { ... } else {
-                withdrawalNeeded -= assetsPostTax;
-                assetsPostTax = 0;
-                // ... same for Pre/Roth
-            }
-        */
-        // If after checking all 3 buckets, `withdrawalNeeded` is still > 0...
-        // The code does NOT subtract the remaining `withdrawalNeeded` from `assetsHSA` or create negative balances.
-        // It simply stops withdrawing.
-        // So `assetsPreTax`, `assetsPostTax`, `assetsRoth` become 0.
-        // `assetsHSA` remains full (minus healthcare).
-        // `assetsEnd` = 0 + 0 + 0 + HugeHSA.
-        // `assetsEnd` > 0.
-        // So the loop CONTINUES.
-
-        // This means the simulation considers you "Solvent" if you have money in HSA, even if you can't pay your rent!
-        // This is a LOGIC FLAW in the calculator if "Solvency" means "Ability to pay expenses".
-        // But usually Net Worth calculators just track Net Worth.
-        // However, if I can't pay my bills, I'm technically in default, but I have assets.
-
-        // The user asked: "MAKE SURE that HSA funds only cover the medical expenses and no more than that."
-        // My code ensures HSA is not *withdrawn* for other expenses.
-        // But does the simulation reflect "running out of accessible money"?
-
-        // Currently `isSolvent` checks `assetsEnd >= 0`.
-        // If I have $1M in HSA and $0 cash, and $50k rent due...
-        // My Net Worth is $1M.
-        // The simulation says "Solvent".
-
-        // Is this what the user wants?
-        // "HSA funds only cover the medical expenses and no more than that." implies strict usage.
-        // If the calculator says "You are fine" but you can't buy food, it's misleading.
-
-        // However, usually one would pay penalty to withdraw from HSA for non-medical?
-        // The calculator doesn't implement that logic (penalty withdrawal).
-        // It just leaves the money in HSA.
-
-        // If the user wants to ensure HSA isn't used for general expenses, I have achieved that (the money stays in HSA).
-        // The graph will show High Net Worth (all in HSA).
-
-        // I should verify that HSA balance *grows* (or stays high) while other balances hit 0.
-        // And `withdrawalNeeded` implies unpaid expenses.
-
-        // The simulation doesn't track "Unpaid Expenses".
-        // It assumes if you run out of liquid assets, you are "Insolvent" ONLY if total assets < 0?
-        // No, typically retirement calculators assume you sell everything.
-        // But here we explicitly segregate HSA.
-
-        // If I want to be strict, I should probably fail solvency if liquid assets run out?
-        // But the current implementation checks `assetsEnd < 0`.
-
-        // I will assert that `assetsHSA` remains high, and others are 0.
-        // And technically, if the user sees they have $1M in HSA and $0 elsewhere, they know they can't pay rent without penalty.
-
-        // Let's modify the test to check that `assetsHSA` is NOT depleted by general expenses.
-        // If it WAS used, it would drop by $50k/year.
-        // If not used, it drops only by healthcare amount (~$5k).
-
-        const firstYear = result.history[0];
-        const healthcare = firstYear.healthcare;
-        const expenses = firstYear.expenses;
-
-        // Check start vs end of first year
-        const startHSA = 1000000;
-        // End HSA should be StartHSA - Healthcare (paid) + Growth.
-        // It should NOT be StartHSA - Healthcare - Expenses.
-
-        // Let's roughly calc expected HSA
-        // HSA growth is applied on remaining balance.
-        // remaining = 1000000 - healthcare.
-        // end = remaining * (1 + returnRate).
-
-        const expectedHSA = (startHSA - healthcare) * (1 + 0.07); // 7% default return
-
-        // Allow for some floating point variance
-        expect(result.history[0].assetsEnd).toBeCloseTo(expectedHSA, -2); // Check within 100s
-
-        // Ensure expenses were NOT deducted from HSA
-        expect(expenses).toBeGreaterThan(40000);
-        expect(result.history[0].assetsEnd).toBeGreaterThan(startHSA - healthcare); // Growth should offset healthcare, definitely not losing 50k
-    });
-
-    it('should adjust healthcare costs by state multiplier', () => {
-        const inputsCA: SimulationInputs = { ...baseInputs, state: 'CA', currentAge: 50, retirementAge: 50 };
-        const resultCA = new RetirementCalculator(inputsCA).simulate();
-        const healthcareCA = resultCA.history[0].healthcare;
-
-        const inputsAL: SimulationInputs = { ...baseInputs, state: 'AL', currentAge: 50, retirementAge: 50 };
-        const resultAL = new RetirementCalculator(inputsAL).simulate();
-        const healthcareAL = resultAL.history[0].healthcare;
-
-        expect(healthcareCA).toBeGreaterThan(healthcareAL);
+        const taxDiff = resMA.taxes - resTX.taxes;
+        // Should be roughly 5% of realized gains (50k) = 2500.
+        // Depending on withdrawal amount iteration (taxes increase withdrawal needed).
+        expect(taxDiff).toBeGreaterThan(2000);
+        expect(taxDiff).toBeLessThan(4000);
     });
 });

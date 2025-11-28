@@ -1,52 +1,797 @@
 {
-  "AL": { "name": "Alabama", "income_tax": { "type": "progressive", "brackets": [{ "rate": 0.02, "min": 0 }, { "rate": 0.04, "min": 500 }, { "rate": 0.05, "min": 3000 }] } },
-  "AK": { "name": "Alaska", "income_tax": { "type": "none" } },
-  "AZ": { "name": "Arizona", "income_tax": { "type": "flat", "rate": 0.025 } },
-  "AR": { "name": "Arkansas", "income_tax": { "type": "progressive", "brackets": [{ "rate": 0.02, "min": 0 }, { "rate": 0.044, "min": 89000 }] } },
-  "CA": { "name": "California", "income_tax": { "type": "progressive", "brackets": [{ "rate": 0.01, "min": 0 }, { "rate": 0.02, "min": 10412 }, { "rate": 0.04, "min": 24684 }, { "rate": 0.06, "min": 38959 }, { "rate": 0.08, "min": 54081 }, { "rate": 0.093, "min": 68350 }, { "rate": 0.103, "min": 349137 }, { "rate": 0.113, "min": 418961 }, { "rate": 0.123, "min": 698271 }, { "rate": 0.133, "min": 1000000 }] } },
-  "CO": { "name": "Colorado", "income_tax": { "type": "flat", "rate": 0.044 } },
-  "CT": { "name": "Connecticut", "income_tax": { "type": "progressive", "brackets": [{ "rate": 0.03, "min": 0 }, { "rate": 0.05, "min": 10000 }, { "rate": 0.0699, "min": 500000 }] } },
-  "DE": { "name": "Delaware", "income_tax": { "type": "progressive", "brackets": [{ "rate": 0, "min": 0 }, { "rate": 0.066, "min": 60000 }] } },
-  "FL": { "name": "Florida", "income_tax": { "type": "none" } },
-  "GA": { "name": "Georgia", "income_tax": { "type": "flat", "rate": 0.0549 } },
-  "HI": { "name": "Hawaii", "income_tax": { "type": "progressive", "brackets": [{ "rate": 0.014, "min": 0 }, { "rate": 0.11, "min": 200000 }] } },
-  "ID": { "name": "Idaho", "income_tax": { "type": "flat", "rate": 0.058 } },
-  "IL": { "name": "Illinois", "income_tax": { "type": "flat", "rate": 0.0495 } },
-  "IN": { "name": "Indiana", "income_tax": { "type": "flat", "rate": 0.0315 } },
-  "IA": { "name": "Iowa", "income_tax": { "type": "flat", "rate": 0.057 } },
-  "KS": { "name": "Kansas", "income_tax": { "type": "progressive", "brackets": [{ "rate": 0.031, "min": 0 }, { "rate": 0.057, "min": 30000 }] } },
-  "KY": { "name": "Kentucky", "income_tax": { "type": "flat", "rate": 0.04 } },
-  "LA": { "name": "Louisiana", "income_tax": { "type": "progressive", "brackets": [{ "rate": 0.0185, "min": 0 }, { "rate": 0.0425, "min": 50000 }] } },
-  "ME": { "name": "Maine", "income_tax": { "type": "progressive", "brackets": [{ "rate": 0.058, "min": 0 }, { "rate": 0.0715, "min": 58050 }] } },
-  "MD": { "name": "Maryland", "income_tax": { "type": "progressive", "brackets": [{ "rate": 0.02, "min": 0 }, { "rate": 0.0575, "min": 250000 }] } },
-  "MA": { "name": "Massachusetts", "income_tax": { "type": "flat", "rate": 0.05 } },
-  "MI": { "name": "Michigan", "income_tax": { "type": "flat", "rate": 0.0425 } },
-  "MN": { "name": "Minnesota", "income_tax": { "type": "progressive", "brackets": [{ "rate": 0.0535, "min": 0 }, { "rate": 0.0985, "min": 183340 }] } },
-  "MS": { "name": "Mississippi", "income_tax": { "type": "flat", "rate": 0.047 } },
-  "MO": { "name": "Missouri", "income_tax": { "type": "progressive", "brackets": [{ "rate": 0.02, "min": 1207 }, { "rate": 0.048, "min": 8449 }] } },
-  "MT": { "name": "Montana", "income_tax": { "type": "progressive", "brackets": [{ "rate": 0.047, "min": 0 }, { "rate": 0.059, "min": 20500 }] } },
-  "NE": { "name": "Nebraska", "income_tax": { "type": "progressive", "brackets": [{ "rate": 0.0246, "min": 0 }, { "rate": 0.0584, "min": 35730 }] } },
-  "NV": { "name": "Nevada", "income_tax": { "type": "none" } },
-  "NH": { "name": "New Hampshire", "income_tax": { "type": "none", "note": "Tax on interest/dividends only" } },
-  "NJ": { "name": "New Jersey", "income_tax": { "type": "progressive", "brackets": [{ "rate": 0.014, "min": 0 }, { "rate": 0.1075, "min": 1000000 }] } },
-  "NM": { "name": "New Mexico", "income_tax": { "type": "progressive", "brackets": [{ "rate": 0.017, "min": 0 }, { "rate": 0.059, "min": 210000 }] } },
-  "NY": { "name": "New York", "income_tax": { "type": "progressive", "brackets": [{ "rate": 0.04, "min": 0 }, { "rate": 0.06, "min": 80650 }, { "rate": 0.109, "min": 25000000 }] } },
-  "NC": { "name": "North Carolina", "income_tax": { "type": "flat", "rate": 0.045 } },
-  "ND": { "name": "North Dakota", "income_tax": { "type": "progressive", "brackets": [{ "rate": 0.011, "min": 0 }, { "rate": 0.029, "min": 447250 }] } },
-  "OH": { "name": "Ohio", "income_tax": { "type": "progressive", "brackets": [{ "rate": 0.0275, "min": 26050 }, { "rate": 0.035, "min": 100000 }] } },
-  "OK": { "name": "Oklahoma", "income_tax": { "type": "progressive", "brackets": [{ "rate": 0.0025, "min": 0 }, { "rate": 0.0475, "min": 7200 }] } },
-  "OR": { "name": "Oregon", "income_tax": { "type": "progressive", "brackets": [{ "rate": 0.0475, "min": 0 }, { "rate": 0.099, "min": 125000 }] } },
-  "PA": { "name": "Pennsylvania", "income_tax": { "type": "flat", "rate": 0.0307 } },
-  "RI": { "name": "Rhode Island", "income_tax": { "type": "progressive", "brackets": [{ "rate": 0.0375, "min": 0 }, { "rate": 0.0599, "min": 155050 }] } },
-  "SC": { "name": "South Carolina", "income_tax": { "type": "progressive", "brackets": [{ "rate": 0, "min": 0 }, { "rate": 0.064, "min": 17330 }] } },
-  "SD": { "name": "South Dakota", "income_tax": { "type": "none" } },
-  "TN": { "name": "Tennessee", "income_tax": { "type": "none" } },
-  "TX": { "name": "Texas", "income_tax": { "type": "none" } },
-  "UT": { "name": "Utah", "income_tax": { "type": "flat", "rate": 0.0465 } },
-  "VT": { "name": "Vermont", "income_tax": { "type": "progressive", "brackets": [{ "rate": 0.0335, "min": 0 }, { "rate": 0.0875, "min": 229550 }] } },
-  "VA": { "name": "Virginia", "income_tax": { "type": "progressive", "brackets": [{ "rate": 0.02, "min": 0 }, { "rate": 0.0575, "min": 17000 }] } },
-  "WA": { "name": "Washington", "income_tax": { "type": "none", "note": "Capital gains tax on high earners exists" } },
-  "WV": { "name": "West Virginia", "income_tax": { "type": "progressive", "brackets": [{ "rate": 0.0236, "min": 0 }, { "rate": 0.0512, "min": 60000 }] } },
-  "WI": { "name": "Wisconsin", "income_tax": { "type": "progressive", "brackets": [{ "rate": 0.035, "min": 0 }, { "rate": 0.0765, "min": 405550 }] } },
-  "WY": { "name": "Wyoming", "income_tax": { "type": "none" } }
+  "AL": {
+    "name": "Alabama",
+    "income_tax": {
+      "type": "progressive",
+      "brackets": [
+        {
+          "rate": 0.02,
+          "min": 0
+        },
+        {
+          "rate": 0.04,
+          "min": 500
+        },
+        {
+          "rate": 0.05,
+          "min": 3000
+        }
+      ]
+    },
+    "capital_gains_tax": {
+      "type": "same_as_income"
+    }
+  },
+  "AK": {
+    "name": "Alaska",
+    "income_tax": {
+      "type": "none"
+    },
+    "capital_gains_tax": {
+      "type": "same_as_income"
+    }
+  },
+  "AZ": {
+    "name": "Arizona",
+    "income_tax": {
+      "type": "flat",
+      "rate": 0.025
+    },
+    "capital_gains_tax": {
+      "type": "same_as_income"
+    }
+  },
+  "AR": {
+    "name": "Arkansas",
+    "income_tax": {
+      "type": "progressive",
+      "brackets": [
+        {
+          "rate": 0.02,
+          "min": 0
+        },
+        {
+          "rate": 0.044,
+          "min": 89000
+        }
+      ]
+    },
+    "capital_gains_tax": {
+      "type": "same_as_income"
+    }
+  },
+  "CA": {
+    "name": "California",
+    "income_tax": {
+      "type": "progressive",
+      "brackets": [
+        {
+          "rate": 0.01,
+          "min": 0
+        },
+        {
+          "rate": 0.02,
+          "min": 10412
+        },
+        {
+          "rate": 0.04,
+          "min": 24684
+        },
+        {
+          "rate": 0.06,
+          "min": 38959
+        },
+        {
+          "rate": 0.08,
+          "min": 54081
+        },
+        {
+          "rate": 0.093,
+          "min": 68350
+        },
+        {
+          "rate": 0.103,
+          "min": 349137
+        },
+        {
+          "rate": 0.113,
+          "min": 418961
+        },
+        {
+          "rate": 0.123,
+          "min": 698271
+        },
+        {
+          "rate": 0.133,
+          "min": 1000000
+        }
+      ]
+    },
+    "capital_gains_tax": {
+      "type": "same_as_income"
+    }
+  },
+  "CO": {
+    "name": "Colorado",
+    "income_tax": {
+      "type": "flat",
+      "rate": 0.044
+    },
+    "capital_gains_tax": {
+      "type": "same_as_income"
+    }
+  },
+  "CT": {
+    "name": "Connecticut",
+    "income_tax": {
+      "type": "progressive",
+      "brackets": [
+        {
+          "rate": 0.03,
+          "min": 0
+        },
+        {
+          "rate": 0.05,
+          "min": 10000
+        },
+        {
+          "rate": 0.0699,
+          "min": 500000
+        }
+      ]
+    },
+    "capital_gains_tax": {
+      "type": "same_as_income"
+    }
+  },
+  "DE": {
+    "name": "Delaware",
+    "income_tax": {
+      "type": "progressive",
+      "brackets": [
+        {
+          "rate": 0,
+          "min": 0
+        },
+        {
+          "rate": 0.066,
+          "min": 60000
+        }
+      ]
+    },
+    "capital_gains_tax": {
+      "type": "same_as_income"
+    }
+  },
+  "FL": {
+    "name": "Florida",
+    "income_tax": {
+      "type": "none"
+    },
+    "capital_gains_tax": {
+      "type": "same_as_income"
+    }
+  },
+  "GA": {
+    "name": "Georgia",
+    "income_tax": {
+      "type": "flat",
+      "rate": 0.0549
+    },
+    "capital_gains_tax": {
+      "type": "same_as_income"
+    }
+  },
+  "HI": {
+    "name": "Hawaii",
+    "income_tax": {
+      "type": "progressive",
+      "brackets": [
+        {
+          "rate": 0.014,
+          "min": 0
+        },
+        {
+          "rate": 0.11,
+          "min": 200000
+        }
+      ]
+    },
+    "capital_gains_tax": {
+      "type": "flat",
+      "rate": 0.0725
+    }
+  },
+  "ID": {
+    "name": "Idaho",
+    "income_tax": {
+      "type": "flat",
+      "rate": 0.058
+    },
+    "capital_gains_tax": {
+      "type": "same_as_income"
+    }
+  },
+  "IL": {
+    "name": "Illinois",
+    "income_tax": {
+      "type": "flat",
+      "rate": 0.0495
+    },
+    "capital_gains_tax": {
+      "type": "same_as_income"
+    }
+  },
+  "IN": {
+    "name": "Indiana",
+    "income_tax": {
+      "type": "flat",
+      "rate": 0.0315
+    },
+    "capital_gains_tax": {
+      "type": "same_as_income"
+    }
+  },
+  "IA": {
+    "name": "Iowa",
+    "income_tax": {
+      "type": "flat",
+      "rate": 0.057
+    },
+    "capital_gains_tax": {
+      "type": "same_as_income"
+    }
+  },
+  "KS": {
+    "name": "Kansas",
+    "income_tax": {
+      "type": "progressive",
+      "brackets": [
+        {
+          "rate": 0.031,
+          "min": 0
+        },
+        {
+          "rate": 0.057,
+          "min": 30000
+        }
+      ]
+    },
+    "capital_gains_tax": {
+      "type": "same_as_income"
+    }
+  },
+  "KY": {
+    "name": "Kentucky",
+    "income_tax": {
+      "type": "flat",
+      "rate": 0.04
+    },
+    "capital_gains_tax": {
+      "type": "same_as_income"
+    }
+  },
+  "LA": {
+    "name": "Louisiana",
+    "income_tax": {
+      "type": "progressive",
+      "brackets": [
+        {
+          "rate": 0.0185,
+          "min": 0
+        },
+        {
+          "rate": 0.0425,
+          "min": 50000
+        }
+      ]
+    },
+    "capital_gains_tax": {
+      "type": "same_as_income"
+    }
+  },
+  "ME": {
+    "name": "Maine",
+    "income_tax": {
+      "type": "progressive",
+      "brackets": [
+        {
+          "rate": 0.058,
+          "min": 0
+        },
+        {
+          "rate": 0.0715,
+          "min": 58050
+        }
+      ]
+    },
+    "capital_gains_tax": {
+      "type": "same_as_income"
+    }
+  },
+  "MD": {
+    "name": "Maryland",
+    "income_tax": {
+      "type": "progressive",
+      "brackets": [
+        {
+          "rate": 0.02,
+          "min": 0
+        },
+        {
+          "rate": 0.0575,
+          "min": 250000
+        }
+      ]
+    },
+    "capital_gains_tax": {
+      "type": "same_as_income"
+    }
+  },
+  "MA": {
+    "name": "Massachusetts",
+    "income_tax": {
+      "type": "flat",
+      "rate": 0.05
+    },
+    "capital_gains_tax": {
+      "type": "flat",
+      "rate": 0.05,
+      "note": "Part B income (interest/dividends) taxed higher, but long-term gains are 5%"
+    }
+  },
+  "MI": {
+    "name": "Michigan",
+    "income_tax": {
+      "type": "flat",
+      "rate": 0.0425
+    },
+    "capital_gains_tax": {
+      "type": "same_as_income"
+    }
+  },
+  "MN": {
+    "name": "Minnesota",
+    "income_tax": {
+      "type": "progressive",
+      "brackets": [
+        {
+          "rate": 0.0535,
+          "min": 0
+        },
+        {
+          "rate": 0.0985,
+          "min": 183340
+        }
+      ]
+    },
+    "capital_gains_tax": {
+      "type": "same_as_income"
+    }
+  },
+  "MS": {
+    "name": "Mississippi",
+    "income_tax": {
+      "type": "flat",
+      "rate": 0.047
+    },
+    "capital_gains_tax": {
+      "type": "same_as_income"
+    }
+  },
+  "MO": {
+    "name": "Missouri",
+    "income_tax": {
+      "type": "progressive",
+      "brackets": [
+        {
+          "rate": 0.02,
+          "min": 1207
+        },
+        {
+          "rate": 0.048,
+          "min": 8449
+        }
+      ]
+    },
+    "capital_gains_tax": {
+      "type": "same_as_income"
+    }
+  },
+  "MT": {
+    "name": "Montana",
+    "income_tax": {
+      "type": "progressive",
+      "brackets": [
+        {
+          "rate": 0.047,
+          "min": 0
+        },
+        {
+          "rate": 0.059,
+          "min": 20500
+        }
+      ]
+    },
+    "capital_gains_tax": {
+      "type": "same_as_income"
+    }
+  },
+  "NE": {
+    "name": "Nebraska",
+    "income_tax": {
+      "type": "progressive",
+      "brackets": [
+        {
+          "rate": 0.0246,
+          "min": 0
+        },
+        {
+          "rate": 0.0584,
+          "min": 35730
+        }
+      ]
+    },
+    "capital_gains_tax": {
+      "type": "same_as_income"
+    }
+  },
+  "NV": {
+    "name": "Nevada",
+    "income_tax": {
+      "type": "none"
+    },
+    "capital_gains_tax": {
+      "type": "same_as_income"
+    }
+  },
+  "NH": {
+    "name": "New Hampshire",
+    "income_tax": {
+      "type": "none",
+      "note": "Tax on interest/dividends only"
+    },
+    "capital_gains_tax": {
+      "type": "none",
+      "note": "Tax on interest/dividends only (repealing soon)"
+    }
+  },
+  "NJ": {
+    "name": "New Jersey",
+    "income_tax": {
+      "type": "progressive",
+      "brackets": [
+        {
+          "rate": 0.014,
+          "min": 0
+        },
+        {
+          "rate": 0.1075,
+          "min": 1000000
+        }
+      ]
+    },
+    "capital_gains_tax": {
+      "type": "same_as_income"
+    }
+  },
+  "NM": {
+    "name": "New Mexico",
+    "income_tax": {
+      "type": "progressive",
+      "brackets": [
+        {
+          "rate": 0.017,
+          "min": 0
+        },
+        {
+          "rate": 0.059,
+          "min": 210000
+        }
+      ]
+    },
+    "capital_gains_tax": {
+      "type": "same_as_income"
+    }
+  },
+  "NY": {
+    "name": "New York",
+    "income_tax": {
+      "type": "progressive",
+      "brackets": [
+        {
+          "rate": 0.04,
+          "min": 0
+        },
+        {
+          "rate": 0.06,
+          "min": 80650
+        },
+        {
+          "rate": 0.109,
+          "min": 25000000
+        }
+      ]
+    },
+    "capital_gains_tax": {
+      "type": "same_as_income"
+    }
+  },
+  "NC": {
+    "name": "North Carolina",
+    "income_tax": {
+      "type": "flat",
+      "rate": 0.045
+    },
+    "capital_gains_tax": {
+      "type": "same_as_income"
+    }
+  },
+  "ND": {
+    "name": "North Dakota",
+    "income_tax": {
+      "type": "progressive",
+      "brackets": [
+        {
+          "rate": 0.011,
+          "min": 0
+        },
+        {
+          "rate": 0.029,
+          "min": 447250
+        }
+      ]
+    },
+    "capital_gains_tax": {
+      "type": "same_as_income"
+    }
+  },
+  "OH": {
+    "name": "Ohio",
+    "income_tax": {
+      "type": "progressive",
+      "brackets": [
+        {
+          "rate": 0.0275,
+          "min": 26050
+        },
+        {
+          "rate": 0.035,
+          "min": 100000
+        }
+      ]
+    },
+    "capital_gains_tax": {
+      "type": "same_as_income"
+    }
+  },
+  "OK": {
+    "name": "Oklahoma",
+    "income_tax": {
+      "type": "progressive",
+      "brackets": [
+        {
+          "rate": 0.0025,
+          "min": 0
+        },
+        {
+          "rate": 0.0475,
+          "min": 7200
+        }
+      ]
+    },
+    "capital_gains_tax": {
+      "type": "same_as_income"
+    }
+  },
+  "OR": {
+    "name": "Oregon",
+    "income_tax": {
+      "type": "progressive",
+      "brackets": [
+        {
+          "rate": 0.0475,
+          "min": 0
+        },
+        {
+          "rate": 0.099,
+          "min": 125000
+        }
+      ]
+    },
+    "capital_gains_tax": {
+      "type": "same_as_income"
+    }
+  },
+  "PA": {
+    "name": "Pennsylvania",
+    "income_tax": {
+      "type": "flat",
+      "rate": 0.0307
+    },
+    "capital_gains_tax": {
+      "type": "same_as_income"
+    }
+  },
+  "RI": {
+    "name": "Rhode Island",
+    "income_tax": {
+      "type": "progressive",
+      "brackets": [
+        {
+          "rate": 0.0375,
+          "min": 0
+        },
+        {
+          "rate": 0.0599,
+          "min": 155050
+        }
+      ]
+    },
+    "capital_gains_tax": {
+      "type": "same_as_income"
+    }
+  },
+  "SC": {
+    "name": "South Carolina",
+    "income_tax": {
+      "type": "progressive",
+      "brackets": [
+        {
+          "rate": 0,
+          "min": 0
+        },
+        {
+          "rate": 0.064,
+          "min": 17330
+        }
+      ]
+    },
+    "capital_gains_tax": {
+      "type": "same_as_income"
+    }
+  },
+  "SD": {
+    "name": "South Dakota",
+    "income_tax": {
+      "type": "none"
+    },
+    "capital_gains_tax": {
+      "type": "same_as_income"
+    }
+  },
+  "TN": {
+    "name": "Tennessee",
+    "income_tax": {
+      "type": "none"
+    },
+    "capital_gains_tax": {
+      "type": "same_as_income"
+    }
+  },
+  "TX": {
+    "name": "Texas",
+    "income_tax": {
+      "type": "none"
+    },
+    "capital_gains_tax": {
+      "type": "same_as_income"
+    }
+  },
+  "UT": {
+    "name": "Utah",
+    "income_tax": {
+      "type": "flat",
+      "rate": 0.0465
+    },
+    "capital_gains_tax": {
+      "type": "same_as_income"
+    }
+  },
+  "VT": {
+    "name": "Vermont",
+    "income_tax": {
+      "type": "progressive",
+      "brackets": [
+        {
+          "rate": 0.0335,
+          "min": 0
+        },
+        {
+          "rate": 0.0875,
+          "min": 229550
+        }
+      ]
+    },
+    "capital_gains_tax": {
+      "type": "same_as_income"
+    }
+  },
+  "VA": {
+    "name": "Virginia",
+    "income_tax": {
+      "type": "progressive",
+      "brackets": [
+        {
+          "rate": 0.02,
+          "min": 0
+        },
+        {
+          "rate": 0.0575,
+          "min": 17000
+        }
+      ]
+    },
+    "capital_gains_tax": {
+      "type": "same_as_income"
+    }
+  },
+  "WA": {
+    "name": "Washington",
+    "income_tax": {
+      "type": "none",
+      "note": "Capital gains tax on high earners exists"
+    },
+    "capital_gains_tax": {
+      "type": "progressive",
+      "brackets": [
+        {
+          "rate": 0,
+          "min": 0
+        },
+        {
+          "rate": 0.07,
+          "min": 250000
+        }
+      ],
+      "note": "7% on long-term gains > $250k"
+    }
+  },
+  "WV": {
+    "name": "West Virginia",
+    "income_tax": {
+      "type": "progressive",
+      "brackets": [
+        {
+          "rate": 0.0236,
+          "min": 0
+        },
+        {
+          "rate": 0.0512,
+          "min": 60000
+        }
+      ]
+    },
+    "capital_gains_tax": {
+      "type": "same_as_income"
+    }
+  },
+  "WI": {
+    "name": "Wisconsin",
+    "income_tax": {
+      "type": "progressive",
+      "brackets": [
+        {
+          "rate": 0.035,
+          "min": 0
+        },
+        {
+          "rate": 0.0765,
+          "min": 405550
+        }
+      ]
+    },
+    "capital_gains_tax": {
+      "type": "same_as_income"
+    }
+  },
+  "WY": {
+    "name": "Wyoming",
+    "income_tax": {
+      "type": "none"
+    },
+    "capital_gains_tax": {
+      "type": "same_as_income"
+    }
+  }
 }

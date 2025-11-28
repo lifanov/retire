@@ -45,13 +45,6 @@ const SliderRow: React.FC<{
 const SavingsGraph: React.FC<{ history: SimulationResult['history'], withdrawalRate: number }> = ({ history, withdrawalRate }) => {
     const data = history.map(h => {
         const safeLimit = h.assetsStart * withdrawalRate;
-        // Expenses + Healthcare + Taxes is total outflow. User said "expenses exceed safe withdrawal rate".
-        // Usually safe withdrawal covers living expenses.
-        // I will use `h.expenses` (living) + `h.healthcare` as the metric to compare against Safe Limit.
-        // Taxes are a consequence, but usually SWR covers gross withdrawals.
-        // Let's compare Total Outflow (Expenses + Healthcare + Taxes) vs Safe Limit?
-        // Or just Living Expenses?
-        // SWR usually implies "Total Withdrawal".
         const totalWithdrawalNeeded = h.expenses + h.healthcare + h.taxes;
 
         return {
@@ -64,15 +57,12 @@ const SavingsGraph: React.FC<{ history: SimulationResult['history'], withdrawalR
         };
     });
 
-    // Calculate gradient offset
     const gradientOffset = () => {
         if (data.length <= 1) return 0;
         const firstUnsafeIndex = data.findIndex(d => d.isUnsafe);
 
-        if (firstUnsafeIndex === -1) return 1; // All safe -> Blue (offset 1)
+        if (firstUnsafeIndex === -1) return 1;
 
-        // Gradient runs from 0 (left) to 1 (right).
-        // If index 0 is unsafe, return 0 (Blue stops at 0).
         return firstUnsafeIndex / (data.length - 1);
     };
 
@@ -145,8 +135,9 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
             currentAge: initialData.currentAge,
             retirementAge: retirementAge,
             lifeExpectancy: 90,
+            savingsCash: initialData.savingsCash,
             savingsPreTax: initialData.savingsPreTax,
-            savingsPostTax: initialData.savingsPostTax,
+            investmentsPostTax: initialData.investmentsPostTax,
             savingsRoth: initialData.savingsRoth,
             savingsHSA: initialData.savingsHSA,
             annualIncome: initialData.annualIncome,
@@ -172,8 +163,6 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
     const feasibleRetirementDate: number | null = useMemo(() => {
         if (result.isSolvent) return null;
 
-        // Try to find a feasible date by incrementing retirement age
-        // Limit search to age 80 to avoid infinite loops or unrealistic suggestions
         for (let age = simInputs.retirementAge + 1; age <= 80; age++) {
              const testInputs = { ...simInputs, retirementAge: age };
              const calc = new RetirementCalculator(testInputs);
@@ -186,7 +175,6 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
 
     const formatMoney = (n: number) => `$${Math.round(n).toLocaleString()}`;
 
-    // Derived Formula Values (First year of retirement snapshot or simplified view)
     const retirementYearData = result.history.find(h => h.isRetired) || result.history[result.history.length-1];
 
     const scrollTo = (id: string) => {
@@ -208,7 +196,7 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
     );
 
     const safeWithdrawal = (retirementYearData.assetsStart * withdrawalRate);
-    const totalIncome = safeWithdrawal + retirementYearData.income; // SW + SS
+    const totalIncome = safeWithdrawal + retirementYearData.income;
     const totalOutflow = retirementYearData.expenses + retirementYearData.healthcare + retirementYearData.taxes;
     const surplus = totalIncome - totalOutflow;
 
@@ -333,6 +321,16 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
                     />
 
                      <SliderRow
+                        label="Cash / HYSA"
+                        value={simInputs.savingsCash}
+                        min={0}
+                        max={1000000}
+                        step={1000}
+                        onChange={v => setSimInputs({...simInputs, savingsCash: v})}
+                        format={formatMoney}
+                    />
+
+                     <SliderRow
                         label="Savings (Pre-Tax)"
                         value={simInputs.savingsPreTax}
                         min={0}
@@ -353,12 +351,12 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
                     />
 
                      <SliderRow
-                        label="Savings (Post-Tax)"
-                        value={simInputs.savingsPostTax}
+                        label="Investments (Post-Tax)"
+                        value={simInputs.investmentsPostTax}
                         min={0}
                         max={2000000}
                         step={5000}
-                        onChange={v => setSimInputs({...simInputs, savingsPostTax: v})}
+                        onChange={v => setSimInputs({...simInputs, investmentsPostTax: v})}
                         format={formatMoney}
                     />
 
@@ -416,7 +414,20 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
                                     {selectedStateData.income_tax.type === 'progressive' && (
                                         <p><span className="font-semibold">Top Rate:</span> {((selectedStateData.income_tax.brackets![selectedStateData.income_tax.brackets!.length - 1].rate) * 100).toFixed(2)}%</p>
                                     )}
-                                    <p className="mt-1"><span className="font-semibold">Healthcare Cost Factor:</span> {stateHealthcareMultiplier}x</p>
+
+                                    {selectedStateData.capital_gains_tax && (
+                                        <div className="mt-1 border-t border-gray-200 pt-1">
+                                            <p><span className="font-semibold">Cap Gains:</span> {selectedStateData.capital_gains_tax.type.replace(/_/g, ' ')}</p>
+                                            {selectedStateData.capital_gains_tax.type === 'flat' && (
+                                                <p><span className="font-semibold">Rate:</span> {(selectedStateData.capital_gains_tax.rate! * 100).toFixed(2)}%</p>
+                                            )}
+                                            {selectedStateData.capital_gains_tax.type === 'progressive' && (
+                                                 <p><span className="font-semibold">Top Rate:</span> {((selectedStateData.capital_gains_tax.brackets![selectedStateData.capital_gains_tax.brackets!.length - 1].rate) * 100).toFixed(2)}%</p>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    <p className="mt-1 pt-1 border-t border-gray-200"><span className="font-semibold">Healthcare Cost Factor:</span> {stateHealthcareMultiplier}x</p>
                                 </div>
                             )}
                          </div>

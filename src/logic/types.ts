@@ -32,6 +32,12 @@ export interface StateTaxData {
         brackets?: { rate: number; min: number }[];
         note?: string;
     };
+    capital_gains_tax?: {
+        type: 'none' | 'flat' | 'progressive' | 'same_as_income';
+        rate?: number;
+        brackets?: { rate: number; min: number }[];
+        note?: string;
+    };
 }
 
 export interface SimulationInputs {
@@ -40,8 +46,9 @@ export interface SimulationInputs {
     lifeExpectancy: number;
 
     // Financials
+    savingsCash: number; // Cash / HYSA
     savingsPreTax: number;
-    savingsPostTax: number; // Taxable brokerage
+    investmentsPostTax: number; // Taxable brokerage (Renamed from savingsPostTax)
     savingsRoth: number; // Tax Free
     savingsHSA: number; // Health Savings Account (Tax Free for Healthcare)
 
