@@ -13,7 +13,7 @@ A simple yet sophisticated web application designed to help US citizens determin
     -   **Inflation & Growth**: Accounts for annual inflation and investment returns.
 -   **Interactive Dashboard**:
     -   Visualizes the "First Year of Retirement" solvency formula.
-    -   **Detailed Graphs**: Plots your Total Net Worth over time to visualize asset depletion or growth.
+    -   **Detailed Graphs**: Plots your Total Net Worth over time to visualize asset depletion or growth. Includes optional visualization of annual withdrawal amounts against safe limits.
     -   **Transparency**: Displays all key assumptions (inflation, tax brackets, healthcare base costs) and allows comparing results across different US states instantly.
     -   **Tweakable Assumptions**: Allows real-time tweaking of variables (Retirement Age, Expenses, Savings) and constants (Inflation, Return Rate, Safe Withdrawal Rate) to stress-test your plan.
     -   Provides an immediate "YES" or "NO" solvency answer with a suggested feasible retirement date if the plan fails.
