@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { type WizardData } from './Wizard';
 import { RetirementCalculator } from '../logic/RetirementCalculator';
@@ -10,6 +10,23 @@ import healthcareDataRaw from '../data/healthcare_data.json';
 import federalTaxDataRaw from '../data/federal_tax_data.json';
 
 const STATE_OPTIONS = Object.keys(stateTaxDataRaw).map(k => ({ value: k, label: (stateTaxDataRaw as any)[k].name }));
+
+// Simple debounce hook
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
 
 interface Props {
     initialData: WizardData;
@@ -152,7 +169,9 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
             filingStatus: initialData.filingStatus,
             inflationRate: CONSTANTS.INFLATION,
             returnRate: CONSTANTS.RETURN_RATE,
-            healthcareInflationRate: CONSTANTS.HEALTHCARE_INFLATION
+            healthcareInflationRate: CONSTANTS.HEALTHCARE_INFLATION,
+            capitalGainsBasisStart: 0.9,
+            capitalGainsBasisEnd: 0.1
         };
     });
 
@@ -160,27 +179,36 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
     const [withdrawalRate, setWithdrawalRate] = useState(0.04);
     const [showWithdrawals, setShowWithdrawals] = useState(false);
 
-    const result: SimulationResult = useMemo(() => {
-        const calculator = new RetirementCalculator(simInputs);
-        return calculator.simulate();
-    }, [simInputs]);
+    // Debounce the heavy simulation inputs
+    const debouncedInputs = useDebounce(simInputs, 300);
 
+    const result: SimulationResult = useMemo(() => {
+        const calculator = new RetirementCalculator(debouncedInputs);
+        return calculator.simulate();
+    }, [debouncedInputs]);
+
+    // Note: We calculate feasible date based on the debounced result to allow UI to remain responsive
     const feasibleRetirementDate: number | null = useMemo(() => {
         if (result.isSolvent) return null;
 
-        for (let age = simInputs.retirementAge + 1; age <= 80; age++) {
-             const testInputs = { ...simInputs, retirementAge: age };
+        // Optimization: Don't run this heavy loop on every slight slider change if we don't have to.
+        // But since it's memoized on result (which is debounced), it's okay.
+
+        for (let age = debouncedInputs.retirementAge + 1; age <= 80; age++) {
+             const testInputs = { ...debouncedInputs, retirementAge: age };
              const calc = new RetirementCalculator(testInputs);
              if (calc.simulate().isSolvent) {
                  return age;
              }
         }
         return null;
-    }, [result.isSolvent, simInputs]);
+    }, [result.isSolvent, debouncedInputs]);
 
     const formatMoney = (n: number) => `$${Math.round(n).toLocaleString()}`;
 
-    const retirementYearData = result.history.find(h => h.isRetired) || result.history[result.history.length-1];
+    // Show fallback data if simulation failed or is empty (shouldn't happen)
+    const history = result.history.length > 0 ? result.history : [];
+    const retirementYearData = history.find(h => h.isRetired) || history[history.length-1];
 
     const scrollTo = (id: string) => {
         const el = document.getElementById(id);
@@ -200,13 +228,15 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
         </span>
     );
 
+    if (!retirementYearData) return <div>Loading...</div>;
+
     const safeWithdrawal = (retirementYearData.assetsStart * withdrawalRate);
     const totalIncome = safeWithdrawal + retirementYearData.income;
     const totalOutflow = retirementYearData.expenses + retirementYearData.healthcare + retirementYearData.taxes;
     const surplus = totalIncome - totalOutflow;
 
     const selectedStateData = (stateTaxDataRaw as any)[simInputs.state] as StateTaxData;
-    const stateHealthcareMultiplier = (healthcareDataRaw.state_multipliers as any)[simInputs.state] || 1.0;
+    // const stateHealthcareMultiplier = (healthcareDataRaw.state_multipliers as any)[simInputs.state] || 1.0;
 
     return (
         <div className="max-w-6xl mx-auto p-6">
@@ -413,11 +443,8 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
                             {selectedStateData && (
                                 <div className="text-xs text-gray-500 mt-2 bg-gray-50 p-2 rounded">
                                     <p><span className="font-semibold">Type:</span> {selectedStateData.income_tax.type}</p>
-                                    {selectedStateData.income_tax.type === 'flat' && (
-                                        <p><span className="font-semibold">Rate:</span> {(selectedStateData.income_tax.rate! * 100).toFixed(2)}%</p>
-                                    )}
-                                    {selectedStateData.income_tax.type === 'progressive' && (
-                                        <p><span className="font-semibold">Top Rate:</span> {((selectedStateData.income_tax.brackets![selectedStateData.income_tax.brackets!.length - 1].rate) * 100).toFixed(2)}%</p>
+                                    {selectedStateData.standard_deduction && (
+                                        <p><span className="font-semibold">Std Deduction:</span> {formatMoney(selectedStateData.standard_deduction[simInputs.filingStatus])}</p>
                                     )}
 
                                     {selectedStateData.capital_gains_tax && (
@@ -426,13 +453,8 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
                                             {selectedStateData.capital_gains_tax.type === 'flat' && (
                                                 <p><span className="font-semibold">Rate:</span> {(selectedStateData.capital_gains_tax.rate! * 100).toFixed(2)}%</p>
                                             )}
-                                            {selectedStateData.capital_gains_tax.type === 'progressive' && (
-                                                 <p><span className="font-semibold">Top Rate:</span> {((selectedStateData.capital_gains_tax.brackets![selectedStateData.capital_gains_tax.brackets!.length - 1].rate) * 100).toFixed(2)}%</p>
-                                            )}
                                         </div>
                                     )}
-
-                                    <p className="mt-1 pt-1 border-t border-gray-200"><span className="font-semibold">Healthcare Cost Factor:</span> {stateHealthcareMultiplier}x</p>
                                 </div>
                             )}
                          </div>
@@ -490,6 +512,35 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
                                  ) : (
                                     <span className="font-mono text-right">{((simInputs.healthcareInflationRate ?? CONSTANTS.HEALTHCARE_INFLATION) * 100).toFixed(1)}%</span>
                                  )}
+
+                                 <span className="text-gray-600">Start Cap Gains Basis</span>
+                                 {tweakAssumptions ? (
+                                    <input
+                                        type="number"
+                                        step="0.1"
+                                        min="0" max="1"
+                                        value={(simInputs.capitalGainsBasisStart ?? 0.9).toFixed(1)}
+                                        onChange={e => setSimInputs({...simInputs, capitalGainsBasisStart: parseFloat(e.target.value)})}
+                                        className="text-right border rounded p-1 w-20"
+                                    />
+                                 ) : (
+                                    <span className="font-mono text-right">{((simInputs.capitalGainsBasisStart ?? 0.9) * 100).toFixed(0)}%</span>
+                                 )}
+
+                                <span className="text-gray-600">End Cap Gains Basis</span>
+                                 {tweakAssumptions ? (
+                                    <input
+                                        type="number"
+                                        step="0.1"
+                                        min="0" max="1"
+                                        value={(simInputs.capitalGainsBasisEnd ?? 0.1).toFixed(1)}
+                                        onChange={e => setSimInputs({...simInputs, capitalGainsBasisEnd: parseFloat(e.target.value)})}
+                                        className="text-right border rounded p-1 w-20"
+                                    />
+                                 ) : (
+                                    <span className="font-mono text-right">{((simInputs.capitalGainsBasisEnd ?? 0.1) * 100).toFixed(0)}%</span>
+                                 )}
+
 
                                  <span className="text-gray-600">Safe Withdrawal Rate</span>
                                  {tweakAssumptions ? (

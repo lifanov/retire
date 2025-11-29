@@ -26,6 +26,12 @@ export interface TaxData {
 
 export interface StateTaxData {
     name: string;
+    standard_deduction: {
+        single: number;
+        married_jointly: number;
+        married_separately: number;
+        head_of_household: number;
+    };
     income_tax: {
         type: 'none' | 'flat' | 'progressive';
         rate?: number;
@@ -67,6 +73,8 @@ export interface SimulationInputs {
     inflationRate?: number;
     returnRate?: number;
     healthcareInflationRate?: number;
+    capitalGainsBasisStart?: number; // 0.0 to 1.0 (default 0.9)
+    capitalGainsBasisEnd?: number; // 0.0 to 1.0 (default 0.1)
 }
 
 export interface SimulationResult {
@@ -89,6 +97,7 @@ export interface YearLog {
     healthcare: number;
     expenses: number;
     assetsEnd: number;
+    cashBalance: number; // Added for debugging/validation
 }
 
 // Defaults

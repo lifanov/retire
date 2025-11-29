@@ -1,797 +1,487 @@
 {
   "AL": {
     "name": "Alabama",
+    "standard_deduction": {
+      "single": 3000,
+      "married_jointly": 7500,
+      "married_separately": 3750,
+      "head_of_household": 4700
+    },
     "income_tax": {
       "type": "progressive",
       "brackets": [
-        {
-          "rate": 0.02,
-          "min": 0
-        },
-        {
-          "rate": 0.04,
-          "min": 500
-        },
-        {
-          "rate": 0.05,
-          "min": 3000
-        }
+        { "rate": 0.02, "min": 0 },
+        { "rate": 0.04, "min": 500 },
+        { "rate": 0.05, "min": 3000 }
       ]
     },
-    "capital_gains_tax": {
-      "type": "same_as_income"
-    }
+    "capital_gains_tax": { "type": "same_as_income" }
   },
   "AK": {
     "name": "Alaska",
-    "income_tax": {
-      "type": "none"
-    },
-    "capital_gains_tax": {
-      "type": "same_as_income"
-    }
+    "standard_deduction": { "single": 0, "married_jointly": 0, "married_separately": 0, "head_of_household": 0 },
+    "income_tax": { "type": "none" },
+    "capital_gains_tax": { "type": "same_as_income" }
   },
   "AZ": {
     "name": "Arizona",
-    "income_tax": {
-      "type": "flat",
-      "rate": 0.025
-    },
-    "capital_gains_tax": {
-      "type": "same_as_income"
-    }
+    "standard_deduction": { "single": 14600, "married_jointly": 29200, "married_separately": 14600, "head_of_household": 21900 },
+    "income_tax": { "type": "flat", "rate": 0.025 },
+    "capital_gains_tax": { "type": "same_as_income" }
   },
   "AR": {
     "name": "Arkansas",
+    "standard_deduction": { "single": 2340, "married_jointly": 4680, "married_separately": 2340, "head_of_household": 2340 },
     "income_tax": {
       "type": "progressive",
       "brackets": [
-        {
-          "rate": 0.02,
-          "min": 0
-        },
-        {
-          "rate": 0.044,
-          "min": 89000
-        }
+        { "rate": 0.02, "min": 0 },
+        { "rate": 0.044, "min": 89000 }
       ]
     },
-    "capital_gains_tax": {
-      "type": "same_as_income"
-    }
+    "capital_gains_tax": { "type": "same_as_income" }
   },
   "CA": {
     "name": "California",
+    "standard_deduction": { "single": 5540, "married_jointly": 11080, "married_separately": 5540, "head_of_household": 11080 },
     "income_tax": {
       "type": "progressive",
       "brackets": [
-        {
-          "rate": 0.01,
-          "min": 0
-        },
-        {
-          "rate": 0.02,
-          "min": 10412
-        },
-        {
-          "rate": 0.04,
-          "min": 24684
-        },
-        {
-          "rate": 0.06,
-          "min": 38959
-        },
-        {
-          "rate": 0.08,
-          "min": 54081
-        },
-        {
-          "rate": 0.093,
-          "min": 68350
-        },
-        {
-          "rate": 0.103,
-          "min": 349137
-        },
-        {
-          "rate": 0.113,
-          "min": 418961
-        },
-        {
-          "rate": 0.123,
-          "min": 698271
-        },
-        {
-          "rate": 0.133,
-          "min": 1000000
-        }
+        { "rate": 0.01, "min": 0 },
+        { "rate": 0.02, "min": 10412 },
+        { "rate": 0.04, "min": 24684 },
+        { "rate": 0.06, "min": 38959 },
+        { "rate": 0.08, "min": 54081 },
+        { "rate": 0.093, "min": 68350 },
+        { "rate": 0.103, "min": 349137 },
+        { "rate": 0.113, "min": 418961 },
+        { "rate": 0.123, "min": 698271 },
+        { "rate": 0.133, "min": 1000000 }
       ]
     },
-    "capital_gains_tax": {
-      "type": "same_as_income"
-    }
+    "capital_gains_tax": { "type": "same_as_income" }
   },
   "CO": {
     "name": "Colorado",
-    "income_tax": {
-      "type": "flat",
-      "rate": 0.044
-    },
-    "capital_gains_tax": {
-      "type": "same_as_income"
-    }
+    "standard_deduction": { "single": 15750, "married_jointly": 31500, "married_separately": 15750, "head_of_household": 23625 },
+    "income_tax": { "type": "flat", "rate": 0.044 },
+    "capital_gains_tax": { "type": "same_as_income" }
   },
   "CT": {
     "name": "Connecticut",
+    "standard_deduction": { "single": 0, "married_jointly": 0, "married_separately": 0, "head_of_household": 0 },
     "income_tax": {
       "type": "progressive",
       "brackets": [
-        {
-          "rate": 0.03,
-          "min": 0
-        },
-        {
-          "rate": 0.05,
-          "min": 10000
-        },
-        {
-          "rate": 0.0699,
-          "min": 500000
-        }
+        { "rate": 0.03, "min": 0 },
+        { "rate": 0.05, "min": 10000 },
+        { "rate": 0.0699, "min": 500000 }
       ]
     },
-    "capital_gains_tax": {
-      "type": "same_as_income"
-    }
+    "capital_gains_tax": { "type": "same_as_income" }
   },
   "DE": {
     "name": "Delaware",
+    "standard_deduction": { "single": 3250, "married_jointly": 6500, "married_separately": 3250, "head_of_household": 6500 },
     "income_tax": {
       "type": "progressive",
       "brackets": [
-        {
-          "rate": 0,
-          "min": 0
-        },
-        {
-          "rate": 0.066,
-          "min": 60000
-        }
+        { "rate": 0, "min": 0 },
+        { "rate": 0.066, "min": 60000 }
       ]
     },
-    "capital_gains_tax": {
-      "type": "same_as_income"
-    }
+    "capital_gains_tax": { "type": "same_as_income" }
   },
   "FL": {
     "name": "Florida",
-    "income_tax": {
-      "type": "none"
-    },
-    "capital_gains_tax": {
-      "type": "same_as_income"
-    }
+    "standard_deduction": { "single": 0, "married_jointly": 0, "married_separately": 0, "head_of_household": 0 },
+    "income_tax": { "type": "none" },
+    "capital_gains_tax": { "type": "same_as_income" }
   },
   "GA": {
     "name": "Georgia",
-    "income_tax": {
-      "type": "flat",
-      "rate": 0.0549
-    },
-    "capital_gains_tax": {
-      "type": "same_as_income"
-    }
+    "standard_deduction": { "single": 12000, "married_jointly": 24000, "married_separately": 12000, "head_of_household": 12000 },
+    "income_tax": { "type": "flat", "rate": 0.0549 },
+    "capital_gains_tax": { "type": "same_as_income" }
   },
   "HI": {
     "name": "Hawaii",
+    "standard_deduction": { "single": 2200, "married_jointly": 4400, "married_separately": 2200, "head_of_household": 3212 },
     "income_tax": {
       "type": "progressive",
       "brackets": [
-        {
-          "rate": 0.014,
-          "min": 0
-        },
-        {
-          "rate": 0.11,
-          "min": 200000
-        }
+        { "rate": 0.014, "min": 0 },
+        { "rate": 0.11, "min": 200000 }
       ]
     },
-    "capital_gains_tax": {
-      "type": "flat",
-      "rate": 0.0725
-    }
+    "capital_gains_tax": { "type": "flat", "rate": 0.0725 }
   },
   "ID": {
     "name": "Idaho",
-    "income_tax": {
-      "type": "flat",
-      "rate": 0.058
-    },
-    "capital_gains_tax": {
-      "type": "same_as_income"
-    }
+    "standard_deduction": { "single": 15750, "married_jointly": 31500, "married_separately": 15750, "head_of_household": 23625 },
+    "income_tax": { "type": "flat", "rate": 0.058 },
+    "capital_gains_tax": { "type": "same_as_income" }
   },
   "IL": {
     "name": "Illinois",
-    "income_tax": {
-      "type": "flat",
-      "rate": 0.0495
-    },
-    "capital_gains_tax": {
-      "type": "same_as_income"
-    }
+    "standard_deduction": { "single": 0, "married_jointly": 0, "married_separately": 0, "head_of_household": 0 },
+    "income_tax": { "type": "flat", "rate": 0.0495 },
+    "capital_gains_tax": { "type": "same_as_income" }
   },
   "IN": {
     "name": "Indiana",
-    "income_tax": {
-      "type": "flat",
-      "rate": 0.0315
-    },
-    "capital_gains_tax": {
-      "type": "same_as_income"
-    }
+    "standard_deduction": { "single": 1000, "married_jointly": 2000, "married_separately": 1000, "head_of_household": 1000 },
+    "income_tax": { "type": "flat", "rate": 0.0315 },
+    "capital_gains_tax": { "type": "same_as_income" }
   },
   "IA": {
     "name": "Iowa",
-    "income_tax": {
-      "type": "flat",
-      "rate": 0.057
-    },
-    "capital_gains_tax": {
-      "type": "same_as_income"
-    }
+    "standard_deduction": { "single": 14600, "married_jointly": 29200, "married_separately": 14600, "head_of_household": 21900 },
+    "income_tax": { "type": "flat", "rate": 0.057 },
+    "capital_gains_tax": { "type": "same_as_income" }
   },
   "KS": {
     "name": "Kansas",
+    "standard_deduction": { "single": 3500, "married_jointly": 8000, "married_separately": 3500, "head_of_household": 6000 },
     "income_tax": {
       "type": "progressive",
       "brackets": [
-        {
-          "rate": 0.031,
-          "min": 0
-        },
-        {
-          "rate": 0.057,
-          "min": 30000
-        }
+        { "rate": 0.031, "min": 0 },
+        { "rate": 0.057, "min": 30000 }
       ]
     },
-    "capital_gains_tax": {
-      "type": "same_as_income"
-    }
+    "capital_gains_tax": { "type": "same_as_income" }
   },
   "KY": {
     "name": "Kentucky",
-    "income_tax": {
-      "type": "flat",
-      "rate": 0.04
-    },
-    "capital_gains_tax": {
-      "type": "same_as_income"
-    }
+    "standard_deduction": { "single": 2980, "married_jointly": 2980, "married_separately": 2980, "head_of_household": 2980 },
+    "income_tax": { "type": "flat", "rate": 0.04 },
+    "capital_gains_tax": { "type": "same_as_income" }
   },
   "LA": {
     "name": "Louisiana",
+    "standard_deduction": { "single": 4500, "married_jointly": 9000, "married_separately": 4500, "head_of_household": 9000 },
     "income_tax": {
       "type": "progressive",
       "brackets": [
-        {
-          "rate": 0.0185,
-          "min": 0
-        },
-        {
-          "rate": 0.0425,
-          "min": 50000
-        }
+        { "rate": 0.0185, "min": 0 },
+        { "rate": 0.0425, "min": 50000 }
       ]
     },
-    "capital_gains_tax": {
-      "type": "same_as_income"
-    }
+    "capital_gains_tax": { "type": "same_as_income" }
   },
   "ME": {
     "name": "Maine",
+    "standard_deduction": { "single": 15750, "married_jointly": 31500, "married_separately": 15750, "head_of_household": 23625 },
     "income_tax": {
       "type": "progressive",
       "brackets": [
-        {
-          "rate": 0.058,
-          "min": 0
-        },
-        {
-          "rate": 0.0715,
-          "min": 58050
-        }
+        { "rate": 0.058, "min": 0 },
+        { "rate": 0.0715, "min": 58050 }
       ]
     },
-    "capital_gains_tax": {
-      "type": "same_as_income"
-    }
+    "capital_gains_tax": { "type": "same_as_income" }
   },
   "MD": {
     "name": "Maryland",
+    "standard_deduction": { "single": 15750, "married_jointly": 31500, "married_separately": 15750, "head_of_household": 23625 },
     "income_tax": {
       "type": "progressive",
       "brackets": [
-        {
-          "rate": 0.02,
-          "min": 0
-        },
-        {
-          "rate": 0.0575,
-          "min": 250000
-        }
+        { "rate": 0.02, "min": 0 },
+        { "rate": 0.0575, "min": 250000 }
       ]
     },
-    "capital_gains_tax": {
-      "type": "same_as_income"
-    }
+    "capital_gains_tax": { "type": "same_as_income" }
   },
   "MA": {
     "name": "Massachusetts",
-    "income_tax": {
-      "type": "flat",
-      "rate": 0.05
-    },
-    "capital_gains_tax": {
-      "type": "flat",
-      "rate": 0.05,
-      "note": "Part B income (interest/dividends) taxed higher, but long-term gains are 5%"
-    }
+    "standard_deduction": { "single": 4400, "married_jointly": 8800, "married_separately": 4400, "head_of_household": 6800 },
+    "income_tax": { "type": "flat", "rate": 0.05 },
+    "capital_gains_tax": { "type": "flat", "rate": 0.05, "note": "Part B income (interest/dividends) taxed higher, but long-term gains are 5%" }
   },
   "MI": {
     "name": "Michigan",
-    "income_tax": {
-      "type": "flat",
-      "rate": 0.0425
-    },
-    "capital_gains_tax": {
-      "type": "same_as_income"
-    }
+    "standard_deduction": { "single": 5400, "married_jointly": 10800, "married_separately": 5400, "head_of_household": 5400 },
+    "income_tax": { "type": "flat", "rate": 0.0425 },
+    "capital_gains_tax": { "type": "same_as_income" }
   },
   "MN": {
     "name": "Minnesota",
+    "standard_deduction": { "single": 15750, "married_jointly": 31500, "married_separately": 15750, "head_of_household": 23625 },
     "income_tax": {
       "type": "progressive",
       "brackets": [
-        {
-          "rate": 0.0535,
-          "min": 0
-        },
-        {
-          "rate": 0.0985,
-          "min": 183340
-        }
+        { "rate": 0.0535, "min": 0 },
+        { "rate": 0.0985, "min": 183340 }
       ]
     },
-    "capital_gains_tax": {
-      "type": "same_as_income"
-    }
+    "capital_gains_tax": { "type": "same_as_income" }
   },
   "MS": {
     "name": "Mississippi",
-    "income_tax": {
-      "type": "flat",
-      "rate": 0.047
-    },
-    "capital_gains_tax": {
-      "type": "same_as_income"
-    }
+    "standard_deduction": { "single": 2300, "married_jointly": 4600, "married_separately": 2300, "head_of_household": 3400 },
+    "income_tax": { "type": "flat", "rate": 0.047 },
+    "capital_gains_tax": { "type": "same_as_income" }
   },
   "MO": {
     "name": "Missouri",
+    "standard_deduction": { "single": 15750, "married_jointly": 31500, "married_separately": 15750, "head_of_household": 23625 },
     "income_tax": {
       "type": "progressive",
       "brackets": [
-        {
-          "rate": 0.02,
-          "min": 1207
-        },
-        {
-          "rate": 0.048,
-          "min": 8449
-        }
+        { "rate": 0.02, "min": 1207 },
+        { "rate": 0.048, "min": 8449 }
       ]
     },
-    "capital_gains_tax": {
-      "type": "same_as_income"
-    }
+    "capital_gains_tax": { "type": "same_as_income" }
   },
   "MT": {
     "name": "Montana",
+    "standard_deduction": { "single": 15750, "married_jointly": 31500, "married_separately": 15750, "head_of_household": 23625 },
     "income_tax": {
       "type": "progressive",
       "brackets": [
-        {
-          "rate": 0.047,
-          "min": 0
-        },
-        {
-          "rate": 0.059,
-          "min": 20500
-        }
+        { "rate": 0.047, "min": 0 },
+        { "rate": 0.059, "min": 20500 }
       ]
     },
-    "capital_gains_tax": {
-      "type": "same_as_income"
-    }
+    "capital_gains_tax": { "type": "same_as_income" }
   },
   "NE": {
     "name": "Nebraska",
+    "standard_deduction": { "single": 7900, "married_jointly": 15800, "married_separately": 7900, "head_of_household": 11600 },
     "income_tax": {
       "type": "progressive",
       "brackets": [
-        {
-          "rate": 0.0246,
-          "min": 0
-        },
-        {
-          "rate": 0.0584,
-          "min": 35730
-        }
+        { "rate": 0.0246, "min": 0 },
+        { "rate": 0.0584, "min": 35730 }
       ]
     },
-    "capital_gains_tax": {
-      "type": "same_as_income"
-    }
+    "capital_gains_tax": { "type": "same_as_income" }
   },
   "NV": {
     "name": "Nevada",
-    "income_tax": {
-      "type": "none"
-    },
-    "capital_gains_tax": {
-      "type": "same_as_income"
-    }
+    "standard_deduction": { "single": 0, "married_jointly": 0, "married_separately": 0, "head_of_household": 0 },
+    "income_tax": { "type": "none" },
+    "capital_gains_tax": { "type": "same_as_income" }
   },
   "NH": {
     "name": "New Hampshire",
-    "income_tax": {
-      "type": "none",
-      "note": "Tax on interest/dividends only"
-    },
-    "capital_gains_tax": {
-      "type": "none",
-      "note": "Tax on interest/dividends only (repealing soon)"
-    }
+    "standard_deduction": { "single": 0, "married_jointly": 0, "married_separately": 0, "head_of_household": 0 },
+    "income_tax": { "type": "none", "note": "Tax on interest/dividends only" },
+    "capital_gains_tax": { "type": "none", "note": "Tax on interest/dividends only (repealing soon)" }
   },
   "NJ": {
     "name": "New Jersey",
+    "standard_deduction": { "single": 0, "married_jointly": 0, "married_separately": 0, "head_of_household": 0 },
     "income_tax": {
       "type": "progressive",
       "brackets": [
-        {
-          "rate": 0.014,
-          "min": 0
-        },
-        {
-          "rate": 0.1075,
-          "min": 1000000
-        }
+        { "rate": 0.014, "min": 0 },
+        { "rate": 0.1075, "min": 1000000 }
       ]
     },
-    "capital_gains_tax": {
-      "type": "same_as_income"
-    }
+    "capital_gains_tax": { "type": "same_as_income" }
   },
   "NM": {
     "name": "New Mexico",
+    "standard_deduction": { "single": 15750, "married_jointly": 31500, "married_separately": 15750, "head_of_household": 23625 },
     "income_tax": {
       "type": "progressive",
       "brackets": [
-        {
-          "rate": 0.017,
-          "min": 0
-        },
-        {
-          "rate": 0.059,
-          "min": 210000
-        }
+        { "rate": 0.017, "min": 0 },
+        { "rate": 0.059, "min": 210000 }
       ]
     },
-    "capital_gains_tax": {
-      "type": "same_as_income"
-    }
+    "capital_gains_tax": { "type": "same_as_income" }
   },
   "NY": {
     "name": "New York",
+    "standard_deduction": { "single": 8000, "married_jointly": 16050, "married_separately": 8000, "head_of_household": 11200 },
     "income_tax": {
       "type": "progressive",
       "brackets": [
-        {
-          "rate": 0.04,
-          "min": 0
-        },
-        {
-          "rate": 0.06,
-          "min": 80650
-        },
-        {
-          "rate": 0.109,
-          "min": 25000000
-        }
+        { "rate": 0.04, "min": 0 },
+        { "rate": 0.06, "min": 80650 },
+        { "rate": 0.109, "min": 25000000 }
       ]
     },
-    "capital_gains_tax": {
-      "type": "same_as_income"
-    }
+    "capital_gains_tax": { "type": "same_as_income" }
   },
   "NC": {
     "name": "North Carolina",
-    "income_tax": {
-      "type": "flat",
-      "rate": 0.045
-    },
-    "capital_gains_tax": {
-      "type": "same_as_income"
-    }
+    "standard_deduction": { "single": 12750, "married_jointly": 25500, "married_separately": 12750, "head_of_household": 19125 },
+    "income_tax": { "type": "flat", "rate": 0.045 },
+    "capital_gains_tax": { "type": "same_as_income" }
   },
   "ND": {
     "name": "North Dakota",
+    "standard_deduction": { "single": 15750, "married_jointly": 31500, "married_separately": 15750, "head_of_household": 23625 },
     "income_tax": {
       "type": "progressive",
       "brackets": [
-        {
-          "rate": 0.011,
-          "min": 0
-        },
-        {
-          "rate": 0.029,
-          "min": 447250
-        }
+        { "rate": 0.011, "min": 0 },
+        { "rate": 0.029, "min": 447250 }
       ]
     },
-    "capital_gains_tax": {
-      "type": "same_as_income"
-    }
+    "capital_gains_tax": { "type": "same_as_income" }
   },
   "OH": {
     "name": "Ohio",
+    "standard_deduction": { "single": 0, "married_jointly": 0, "married_separately": 0, "head_of_household": 0 },
     "income_tax": {
       "type": "progressive",
       "brackets": [
-        {
-          "rate": 0.0275,
-          "min": 26050
-        },
-        {
-          "rate": 0.035,
-          "min": 100000
-        }
+        { "rate": 0.0275, "min": 26050 },
+        { "rate": 0.035, "min": 100000 }
       ]
     },
-    "capital_gains_tax": {
-      "type": "same_as_income"
-    }
+    "capital_gains_tax": { "type": "same_as_income" }
   },
   "OK": {
     "name": "Oklahoma",
+    "standard_deduction": { "single": 6350, "married_jointly": 12700, "married_separately": 6350, "head_of_household": 9350 },
     "income_tax": {
       "type": "progressive",
       "brackets": [
-        {
-          "rate": 0.0025,
-          "min": 0
-        },
-        {
-          "rate": 0.0475,
-          "min": 7200
-        }
+        { "rate": 0.0025, "min": 0 },
+        { "rate": 0.0475, "min": 7200 }
       ]
     },
-    "capital_gains_tax": {
-      "type": "same_as_income"
-    }
+    "capital_gains_tax": { "type": "same_as_income" }
   },
   "OR": {
     "name": "Oregon",
+    "standard_deduction": { "single": 2745, "married_jointly": 5495, "married_separately": 2745, "head_of_household": 4400 },
     "income_tax": {
       "type": "progressive",
       "brackets": [
-        {
-          "rate": 0.0475,
-          "min": 0
-        },
-        {
-          "rate": 0.099,
-          "min": 125000
-        }
+        { "rate": 0.0475, "min": 0 },
+        { "rate": 0.099, "min": 125000 }
       ]
     },
-    "capital_gains_tax": {
-      "type": "same_as_income"
-    }
+    "capital_gains_tax": { "type": "same_as_income" }
   },
   "PA": {
     "name": "Pennsylvania",
-    "income_tax": {
-      "type": "flat",
-      "rate": 0.0307
-    },
-    "capital_gains_tax": {
-      "type": "same_as_income"
-    }
+    "standard_deduction": { "single": 0, "married_jointly": 0, "married_separately": 0, "head_of_household": 0 },
+    "income_tax": { "type": "flat", "rate": 0.0307 },
+    "capital_gains_tax": { "type": "same_as_income" }
   },
   "RI": {
     "name": "Rhode Island",
+    "standard_deduction": { "single": 15750, "married_jointly": 31500, "married_separately": 15750, "head_of_household": 23625 },
     "income_tax": {
       "type": "progressive",
       "brackets": [
-        {
-          "rate": 0.0375,
-          "min": 0
-        },
-        {
-          "rate": 0.0599,
-          "min": 155050
-        }
+        { "rate": 0.0375, "min": 0 },
+        { "rate": 0.0599, "min": 155050 }
       ]
     },
-    "capital_gains_tax": {
-      "type": "same_as_income"
-    }
+    "capital_gains_tax": { "type": "same_as_income" }
   },
   "SC": {
     "name": "South Carolina",
+    "standard_deduction": { "single": 15750, "married_jointly": 31500, "married_separately": 15750, "head_of_household": 23625 },
     "income_tax": {
       "type": "progressive",
       "brackets": [
-        {
-          "rate": 0,
-          "min": 0
-        },
-        {
-          "rate": 0.064,
-          "min": 17330
-        }
+        { "rate": 0, "min": 0 },
+        { "rate": 0.064, "min": 17330 }
       ]
     },
-    "capital_gains_tax": {
-      "type": "same_as_income"
-    }
+    "capital_gains_tax": { "type": "same_as_income" }
   },
   "SD": {
     "name": "South Dakota",
-    "income_tax": {
-      "type": "none"
-    },
-    "capital_gains_tax": {
-      "type": "same_as_income"
-    }
+    "standard_deduction": { "single": 0, "married_jointly": 0, "married_separately": 0, "head_of_household": 0 },
+    "income_tax": { "type": "none" },
+    "capital_gains_tax": { "type": "same_as_income" }
   },
   "TN": {
     "name": "Tennessee",
-    "income_tax": {
-      "type": "none"
-    },
-    "capital_gains_tax": {
-      "type": "same_as_income"
-    }
+    "standard_deduction": { "single": 0, "married_jointly": 0, "married_separately": 0, "head_of_household": 0 },
+    "income_tax": { "type": "none" },
+    "capital_gains_tax": { "type": "same_as_income" }
   },
   "TX": {
     "name": "Texas",
-    "income_tax": {
-      "type": "none"
-    },
-    "capital_gains_tax": {
-      "type": "same_as_income"
-    }
+    "standard_deduction": { "single": 0, "married_jointly": 0, "married_separately": 0, "head_of_household": 0 },
+    "income_tax": { "type": "none" },
+    "capital_gains_tax": { "type": "same_as_income" }
   },
   "UT": {
     "name": "Utah",
-    "income_tax": {
-      "type": "flat",
-      "rate": 0.0465
-    },
-    "capital_gains_tax": {
-      "type": "same_as_income"
-    }
+    "standard_deduction": { "single": 0, "married_jointly": 0, "married_separately": 0, "head_of_household": 0 },
+    "income_tax": { "type": "flat", "rate": 0.0465 },
+    "capital_gains_tax": { "type": "same_as_income" }
   },
   "VT": {
     "name": "Vermont",
+    "standard_deduction": { "single": 7150, "married_jointly": 14300, "married_separately": 7150, "head_of_household": 10750 },
     "income_tax": {
       "type": "progressive",
       "brackets": [
-        {
-          "rate": 0.0335,
-          "min": 0
-        },
-        {
-          "rate": 0.0875,
-          "min": 229550
-        }
+        { "rate": 0.0335, "min": 0 },
+        { "rate": 0.0875, "min": 229550 }
       ]
     },
-    "capital_gains_tax": {
-      "type": "same_as_income"
-    }
+    "capital_gains_tax": { "type": "same_as_income" }
   },
   "VA": {
     "name": "Virginia",
+    "standard_deduction": { "single": 8000, "married_jointly": 16000, "married_separately": 8000, "head_of_household": 8000 },
     "income_tax": {
       "type": "progressive",
       "brackets": [
-        {
-          "rate": 0.02,
-          "min": 0
-        },
-        {
-          "rate": 0.0575,
-          "min": 17000
-        }
+        { "rate": 0.02, "min": 0 },
+        { "rate": 0.0575, "min": 17000 }
       ]
     },
-    "capital_gains_tax": {
-      "type": "same_as_income"
-    }
+    "capital_gains_tax": { "type": "same_as_income" }
   },
   "WA": {
     "name": "Washington",
-    "income_tax": {
-      "type": "none",
-      "note": "Capital gains tax on high earners exists"
-    },
+    "standard_deduction": { "single": 0, "married_jointly": 0, "married_separately": 0, "head_of_household": 0 },
+    "income_tax": { "type": "none", "note": "Capital gains tax on high earners exists" },
     "capital_gains_tax": {
       "type": "progressive",
       "brackets": [
-        {
-          "rate": 0,
-          "min": 0
-        },
-        {
-          "rate": 0.07,
-          "min": 250000
-        }
+        { "rate": 0, "min": 0 },
+        { "rate": 0.07, "min": 250000 }
       ],
       "note": "7% on long-term gains > $250k"
     }
   },
   "WV": {
     "name": "West Virginia",
+    "standard_deduction": { "single": 0, "married_jointly": 0, "married_separately": 0, "head_of_household": 0 },
     "income_tax": {
       "type": "progressive",
       "brackets": [
-        {
-          "rate": 0.0236,
-          "min": 0
-        },
-        {
-          "rate": 0.0512,
-          "min": 60000
-        }
+        { "rate": 0.0236, "min": 0 },
+        { "rate": 0.0512, "min": 60000 }
       ]
     },
-    "capital_gains_tax": {
-      "type": "same_as_income"
-    }
+    "capital_gains_tax": { "type": "same_as_income" }
   },
   "WI": {
     "name": "Wisconsin",
+    "standard_deduction": { "single": 13830, "married_jointly": 27650, "married_separately": 13830, "head_of_household": 20740 },
     "income_tax": {
       "type": "progressive",
       "brackets": [
-        {
-          "rate": 0.035,
-          "min": 0
-        },
-        {
-          "rate": 0.0765,
-          "min": 405550
-        }
+        { "rate": 0.035, "min": 0 },
+        { "rate": 0.0765, "min": 405550 }
       ]
     },
-    "capital_gains_tax": {
-      "type": "same_as_income"
-    }
+    "capital_gains_tax": { "type": "same_as_income" }
   },
   "WY": {
     "name": "Wyoming",
-    "income_tax": {
-      "type": "none"
-    },
-    "capital_gains_tax": {
-      "type": "same_as_income"
-    }
+    "standard_deduction": { "single": 0, "married_jointly": 0, "married_separately": 0, "head_of_household": 0 },
+    "income_tax": { "type": "none" },
+    "capital_gains_tax": { "type": "same_as_income" }
   }
 }

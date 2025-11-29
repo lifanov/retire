@@ -157,17 +157,31 @@ export const Wizard: React.FC<Props> = ({ data, setData, onComplete }) => {
 
     // Step 4: Assets Breakdown
     if (data.step === 4) {
-        // Local state for total savings fallback
-        const [totalSavings, setTotalSavings] = React.useState<number | ''>(
-            (data.savingsCash + data.savingsPreTax + data.investmentsPostTax + (data.savingsRoth || 0)) || ''
-        );
+        // We use a useEffect-like approach (or just simple deriving) to set initial local state,
+        // but to avoid the "syncing bug", we won't try to force bidirectional sync on every keystroke
+        // in a way that fights the user.
+
+        // Instead of local state for totalSavings that tries to be smart, we just use it as a helper input.
+        // If the user types in Total, we distribute it.
+        // If the user edits a sub-field, we update that sub-field directly in `data` (parent state).
+        // We recalculate the "Total" display based on the sum of sub-fields if they edit one.
+
+        const currentTotal = data.savingsCash + data.savingsPreTax + data.investmentsPostTax + (data.savingsRoth || 0);
+
+        // We'll keep a local state for the "Total Input" just so it can be empty while typing,
+        // but we initialize it with the current sum.
+        const [totalInputValue, setTotalInputValue] = React.useState<string | number>(currentTotal || '');
         const [showBreakdown, setShowBreakdown] = React.useState(true);
         const [hsaInput, setHsaInput] = React.useState<number | ''>(data.savingsHSA || '');
         const [skipHSA, setSkipHSA] = React.useState(data.savingsHSA === 0);
         const [error, setError] = React.useState<string | null>(null);
 
+        // When `data` changes externally (or from our updates), we might want to reflect that in totalInputValue
+        // ONLY if the user isn't currently editing it. But since we don't know that easily,
+        // we'll just update totalInputValue when we distribute.
+
         const handleTotalChange = (val: number | '') => {
-            setTotalSavings(val);
+            setTotalInputValue(val);
             setError(null);
             if (typeof val === 'number') {
                 // Default Split: 5% Cash, 30% Pre, 30% Roth, 35% Post
@@ -187,12 +201,28 @@ export const Wizard: React.FC<Props> = ({ data, setData, onComplete }) => {
             }
         };
 
+        const handleSubFieldChange = (field: keyof WizardData, val: number) => {
+            // Update the specific field
+            const newData = { ...data, [field]: val };
+            setData(newData);
+
+            // Re-sum for the total box display
+            const newSum = (field === 'savingsCash' ? val : data.savingsCash) +
+                           (field === 'savingsPreTax' ? val : data.savingsPreTax) +
+                           (field === 'investmentsPostTax' ? val : data.investmentsPostTax) +
+                           (field === 'savingsRoth' ? val : (data.savingsRoth || 0));
+
+            setTotalInputValue(newSum);
+            setError(null);
+        };
+
         const resetSplit = () => {
-             if (typeof totalSavings === 'number') {
-                 const cash = totalSavings * 0.05;
-                 const pre = totalSavings * 0.30;
-                 const roth = totalSavings * 0.30;
-                 const post = totalSavings * 0.35;
+             const val = typeof totalInputValue === 'number' ? totalInputValue : parseFloat(totalInputValue as string);
+             if (!isNaN(val)) {
+                 const cash = val * 0.05;
+                 const pre = val * 0.30;
+                 const roth = val * 0.30;
+                 const post = val * 0.35;
                  // Batch update
                  setData({
                     ...data,
@@ -206,16 +236,25 @@ export const Wizard: React.FC<Props> = ({ data, setData, onComplete }) => {
         };
 
         const handleNext = () => {
-             // Validation: Cash + Pre + Roth + Post must match Total (if Total is used)
-             if (typeof totalSavings === 'number' && totalSavings > 0) {
-                 const sum = data.savingsCash + data.savingsPreTax + data.investmentsPostTax + (data.savingsRoth || 0);
-                 if (Math.abs(sum - totalSavings) > 1) { // Epsilon for float math
-                     setError(`Your breakdown ($${Math.round(sum)}) does not match your total ($${totalSavings}).`);
-                     return;
-                 }
+             // Validation: Cash + Pre + Roth + Post must match Total (if Total is provided and not empty)
+             // Actually, the new logic just sums them up. If the user entered a Total, we distributed it.
+             // If they edited subfields, the total updated.
+             // The only case for error is if they manually typed a Total, then manually edited subfields to mismatch?
+             // But we update the Total display when subfields change.
+             // The only " mismatch" is if they type a Total, don't press enter/change focus, and try to click Next?
+             // No, the onChange fires.
+
+             // Let's just ensure the fields are valid numbers.
+             const sum = data.savingsCash + data.savingsPreTax + data.investmentsPostTax + (data.savingsRoth || 0);
+
+             // If totalInputValue is a number, check if it matches sum roughly.
+             if (typeof totalInputValue === 'number' && Math.abs(sum - totalInputValue) > 5) {
+                  // If significantly different, warn them?
+                  // Or just trust the sub-fields.
+                  // The user complaint was "UX of forcing them to match manually".
+                  // So let's just trust the sub-fields sum.
              }
 
-             // Fix: Combined update to avoid stale closure issues with multiple setState calls
              let newHSA = 0;
              if (!skipHSA && hsaInput !== '') {
                  newHSA = typeof hsaInput === 'number' ? hsaInput : parseFloat(hsaInput);
@@ -234,14 +273,15 @@ export const Wizard: React.FC<Props> = ({ data, setData, onComplete }) => {
                 <h2 className="text-2xl font-bold mb-4">Current Savings</h2>
 
                 <div className="mb-6">
-                     <p className="mb-2 text-sm text-gray-600">Total Savings Estimate (Optional)</p>
+                     <p className="mb-2 text-sm text-gray-600">Total Savings Estimate (Optional helper)</p>
                      <input
                         type="number"
                         className="w-full border border-gray-300 rounded p-2"
                         placeholder="Total Amount"
-                        value={totalSavings}
+                        value={totalInputValue}
                         onChange={e => handleTotalChange(parseFloat(e.target.value) || '')}
                      />
+                     <p className="text-xs text-gray-400 mt-1">Entering a total will auto-distribute. You can adjust details below.</p>
                 </div>
 
                 <div className="mb-4 border-t pt-4">
@@ -258,25 +298,25 @@ export const Wizard: React.FC<Props> = ({ data, setData, onComplete }) => {
                                 label="Cash / High Yield Savings"
                                 type="number"
                                 value={data.savingsCash}
-                                onChange={e => { update('savingsCash', parseFloat(e.target.value) || 0); setError(null); }}
+                                onChange={e => handleSubFieldChange('savingsCash', parseFloat(e.target.value) || 0)}
                             />
                             <Input
                                 label="Pre-Tax Savings (401k, Traditional IRA)"
                                 type="number"
                                 value={data.savingsPreTax}
-                                onChange={e => { update('savingsPreTax', parseFloat(e.target.value) || 0); setError(null); }}
+                                onChange={e => handleSubFieldChange('savingsPreTax', parseFloat(e.target.value) || 0)}
                             />
                             <Input
                                 label="Roth Savings (Roth IRA, Roth 401k)"
                                 type="number"
                                 value={data.savingsRoth}
-                                onChange={e => { update('savingsRoth', parseFloat(e.target.value) || 0); setError(null); }}
+                                onChange={e => handleSubFieldChange('savingsRoth', parseFloat(e.target.value) || 0)}
                             />
                             <Input
                                 label="Investments (Post-Tax / Brokerage)"
                                 type="number"
                                 value={data.investmentsPostTax}
-                                onChange={e => { update('investmentsPostTax', parseFloat(e.target.value) || 0); setError(null); }}
+                                onChange={e => handleSubFieldChange('investmentsPostTax', parseFloat(e.target.value) || 0)}
                             />
 
                             <div className="mt-4 pt-4 border-t">
@@ -309,7 +349,7 @@ export const Wizard: React.FC<Props> = ({ data, setData, onComplete }) => {
                             onClick={resetSplit}
                             className="text-xs bg-white border border-red-300 px-2 py-1 rounded hover:bg-red-50"
                         >
-                            Reset to Default Split (5% Cash / 30% Pre / 30% Roth / 35% Post)
+                            Reset to Default Split
                         </button>
                     </div>
                 )}
