@@ -10,8 +10,9 @@ describe('Wizard Component', () => {
         const initialData: WizardData = {
             ...DEFAULT_WIZARD_DATA,
             step: 4,
+            savingsCash: 0,
             savingsPreTax: 0,
-            savingsPostTax: 0,
+            investmentsPostTax: 0,
             savingsRoth: 0,
             savingsHSA: 0
         };

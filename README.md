@@ -11,6 +11,7 @@ A simple yet sophisticated web application designed to help US citizens determin
     -   **HSA & Roth Support**: Prioritizes withdrawals from HSA (tax-free for healthcare), then Post-Tax (taxable), Pre-Tax (tax-deferred), and Roth (tax-free) to optimize tax efficiency.
     -   **Social Security**: Estimates benefits with actuarial adjustments for early (62+) or late (70) claiming.
     -   **Inflation & Growth**: Accounts for annual inflation and investment returns.
+    -   **Asset Classes**: Supports Cash, Pre-Tax, Roth, and Taxable Investments with distinct growth and tax characteristics.
 -   **Interactive Dashboard**:
     -   Visualizes the "First Year of Retirement" solvency formula.
     -   **Detailed Graphs**: Plots your Total Net Worth over time to visualize asset depletion or growth. Includes optional visualization of annual withdrawal amounts against safe limits.

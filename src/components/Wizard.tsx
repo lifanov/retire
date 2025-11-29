@@ -19,8 +19,9 @@ export interface WizardData {
     filingStatus: FilingStatus;
     annualIncome: number;
     annualExpenses: number;
+    savingsCash: number;
     savingsPreTax: number;
-    savingsPostTax: number;
+    investmentsPostTax: number;
     savingsRoth: number;
     savingsHSA: number;
     ssEstimate: number;
@@ -34,8 +35,9 @@ export const DEFAULT_WIZARD_DATA: WizardData = {
     filingStatus: 'single',
     annualIncome: 60000,
     annualExpenses: 40000,
+    savingsCash: 0,
     savingsPreTax: 0,
-    savingsPostTax: 0,
+    investmentsPostTax: 0,
     savingsRoth: 0,
     savingsHSA: 0,
     ssEstimate: 20000,
@@ -157,7 +159,7 @@ export const Wizard: React.FC<Props> = ({ data, setData, onComplete }) => {
     if (data.step === 4) {
         // Local state for total savings fallback
         const [totalSavings, setTotalSavings] = React.useState<number | ''>(
-            (data.savingsPreTax + data.savingsPostTax + (data.savingsRoth || 0)) || ''
+            (data.savingsCash + data.savingsPreTax + data.investmentsPostTax + (data.savingsRoth || 0)) || ''
         );
         const [showBreakdown, setShowBreakdown] = React.useState(true);
         const [hsaInput, setHsaInput] = React.useState<number | ''>(data.savingsHSA || '');
@@ -168,16 +170,18 @@ export const Wizard: React.FC<Props> = ({ data, setData, onComplete }) => {
             setTotalSavings(val);
             setError(null);
             if (typeof val === 'number') {
-                // Default Split: 30% Pre, 30% Roth, 40% Post
+                // Default Split: 5% Cash, 30% Pre, 30% Roth, 35% Post
+                const cash = val * 0.05;
                 const pre = val * 0.30;
                 const roth = val * 0.30;
-                const post = val * 0.40;
+                const post = val * 0.35;
 
                 // Batch update
                 setData({
                     ...data,
+                    savingsCash: cash,
                     savingsPreTax: pre,
-                    savingsPostTax: post,
+                    investmentsPostTax: post,
                     savingsRoth: roth
                 });
             }
@@ -185,14 +189,16 @@ export const Wizard: React.FC<Props> = ({ data, setData, onComplete }) => {
 
         const resetSplit = () => {
              if (typeof totalSavings === 'number') {
+                 const cash = totalSavings * 0.05;
                  const pre = totalSavings * 0.30;
                  const roth = totalSavings * 0.30;
-                 const post = totalSavings * 0.40;
+                 const post = totalSavings * 0.35;
                  // Batch update
                  setData({
                     ...data,
+                    savingsCash: cash,
                     savingsPreTax: pre,
-                    savingsPostTax: post,
+                    investmentsPostTax: post,
                     savingsRoth: roth
                  });
                  setError(null);
@@ -200,9 +206,9 @@ export const Wizard: React.FC<Props> = ({ data, setData, onComplete }) => {
         };
 
         const handleNext = () => {
-             // Validation: Pre + Roth + Post must match Total (if Total is used)
+             // Validation: Cash + Pre + Roth + Post must match Total (if Total is used)
              if (typeof totalSavings === 'number' && totalSavings > 0) {
-                 const sum = data.savingsPreTax + data.savingsPostTax + (data.savingsRoth || 0);
+                 const sum = data.savingsCash + data.savingsPreTax + data.investmentsPostTax + (data.savingsRoth || 0);
                  if (Math.abs(sum - totalSavings) > 1) { // Epsilon for float math
                      setError(`Your breakdown ($${Math.round(sum)}) does not match your total ($${totalSavings}).`);
                      return;
@@ -248,6 +254,12 @@ export const Wizard: React.FC<Props> = ({ data, setData, onComplete }) => {
 
                     {showBreakdown && (
                         <div>
+                             <Input
+                                label="Cash / High Yield Savings"
+                                type="number"
+                                value={data.savingsCash}
+                                onChange={e => { update('savingsCash', parseFloat(e.target.value) || 0); setError(null); }}
+                            />
                             <Input
                                 label="Pre-Tax Savings (401k, Traditional IRA)"
                                 type="number"
@@ -261,10 +273,10 @@ export const Wizard: React.FC<Props> = ({ data, setData, onComplete }) => {
                                 onChange={e => { update('savingsRoth', parseFloat(e.target.value) || 0); setError(null); }}
                             />
                             <Input
-                                label="Post-Tax / Taxable (Brokerage, Bank)"
+                                label="Investments (Post-Tax / Brokerage)"
                                 type="number"
-                                value={data.savingsPostTax}
-                                onChange={e => { update('savingsPostTax', parseFloat(e.target.value) || 0); setError(null); }}
+                                value={data.investmentsPostTax}
+                                onChange={e => { update('investmentsPostTax', parseFloat(e.target.value) || 0); setError(null); }}
                             />
 
                             <div className="mt-4 pt-4 border-t">
@@ -297,7 +309,7 @@ export const Wizard: React.FC<Props> = ({ data, setData, onComplete }) => {
                             onClick={resetSplit}
                             className="text-xs bg-white border border-red-300 px-2 py-1 rounded hover:bg-red-50"
                         >
-                            Reset to Default Split (30% Pre / 30% Roth / 40% Post)
+                            Reset to Default Split (5% Cash / 30% Pre / 30% Roth / 35% Post)
                         </button>
                     </div>
                 )}
