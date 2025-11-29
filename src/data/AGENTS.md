@@ -1,48 +1,44 @@
-# Updating Data Files
+# Data Maintenance Agents
 
-This project relies on several JSON data files in `src/data/` which must be kept up-to-date with current economic and tax laws. These files should be reviewed and updated annually (typically Q4 for the upcoming tax year).
+This application relies on hardcoded data for tax calculations, healthcare costs, and other financial parameters. This data must be manually updated annually or when significant tax law changes occur.
 
-## Federal Tax Data (`src/data/federal_tax_data.json`)
+## Files to Maintain
 
-**Source:** IRS Revenue Procedures (e.g., "Revenue Procedure 2024-xx" for 2025).
-**Secondary Sources:** Tax Foundation, NerdWallet, Bankrate (for easier reading).
+*   `src/data/federal_tax_data.json`: Federal tax brackets, standard deductions, and capital gains rates.
+*   `src/data/state_tax_config.json`: State income tax rates, brackets, **standard deductions**, and capital gains configurations.
+*   `src/data/healthcare_data.json`: Pre-Medicare and Medicare cost estimates.
 
-**Verification Checklist:**
-1.  **Standard Deductions:** Verify for all filing statuses (Single, MFJ, MFS, Head of Household).
-2.  **Ordinary Income Brackets:**
-    *   Double-check the income thresholds for each rate (10%, 12%, 22%, 24%, 32%, 35%, 37%).
-    *   Ensure the "Married Filing Separately" brackets are correct (often distinct from Single at high incomes).
-    *   Ensure "Head of Household" brackets are correct.
-3.  **Capital Gains Brackets:**
-    *   Verify Long-Term Capital Gains thresholds (0%, 15%, 20%).
-    *   **Important:** These apply to *taxable income*, not just the gains themselves.
+## Update Instructions
 
-## Healthcare Data (`src/data/healthcare_data.json`)
+### 1. Federal Tax Data (`federal_tax_data.json`)
 
-**Source:** KFF (Kaiser Family Foundation), CMS.gov (Medicare premiums).
+*   **Source:** IRS Revenue Procedures (e.g., Rev. Proc. 24-xx for 2024 tax year).
+*   **Fields:**
+    *   `standard_deduction`: Update for Single, Married Jointly, Married Separately, and Head of Household.
+    *   `brackets`: Update income thresholds for each tax bracket.
+    *   `capital_gains`: Update income thresholds for 0%, 15%, and 20% rates.
 
-**Verification Checklist:**
-1.  **Pre-Medicare Costs:** Update the base annual cost for a private plan (Silver plan average is a good proxy).
-2.  **Deductible:** Update `deductible` based on the average marketplace (Silver) plan deductible. Source: KFF or HealthCare.gov.
-3.  **Medicare Costs:** Update Part B premiums + average Part D + Medigap estimates.
-4.  **State Multipliers:** Review if certain states have significantly diverged in healthcare costs relative to the national average.
+### 2. State Tax Data (`state_tax_config.json`)
 
-## State Tax Data (`src/data/state_tax_config.json`)
+*   **Source:** State Department of Revenue websites, Tax Foundation, or reliable tax software summaries.
+*   **Fields:**
+    *   `income_tax`: Update rates and bracket thresholds.
+    *   `standard_deduction`: **CRITICAL** - Ensure this reflects the *state-specific* standard deduction, not the federal one.
+        *   If a state conforms to Federal, copy the Federal amount.
+        *   If a state has no income tax, set to 0.
+        *   If a state has a fixed/decoupled amount (e.g., CA, NY, VA), find the specific state amount for the tax year.
+    *   `capital_gains_tax`: Check for specific state capital gains rules (e.g., WA 7% excise tax).
 
-**Source:** State Department of Revenue websites, Tax Foundation "State Individual Income Tax Rates and Brackets", "State Capital Gains Tax Rates".
+### 3. Healthcare Data (`healthcare_data.json`)
 
-**Verification Checklist:**
-1.  **No Tax States:** Ensure list is current (e.g., TX, FL, TN, WA, NV, etc.).
-2.  **Flat Tax States:** Update the flat rate if changed.
-3.  **Progressive States:**
-    *   This file often uses a simplified model (e.g. top bracket or effective estimate).
-    *   If a state undergoes major tax reform (e.g., switching from progressive to flat), update the `type` and `rate`.
-4.  **Capital Gains:**
-    *   The file now supports a `capital_gains_tax` object for each state.
-    *   Default is `{"type": "same_as_income"}` which applies the income tax logic.
-    *   If a state has a specific capital gains tax (e.g., WA, HI, MA), update this object with `flat` or `progressive` structure similar to `income_tax`.
+*   **Source:** Medicare.gov, KFF (Kaiser Family Foundation), and ACA exchange data.
+*   **Fields:**
+    *   `pre_medicare_annual_cost`: Estimate average Silver plan premiums.
+    *   `medicare_annual_cost`: Update Part B premiums + average Medigap + Part D costs.
+    *   `state_multipliers`: Adjust if certain states see massive deviation from national average.
 
-## General Verification
+## Verification
 
-*   Always run `npm test` after updating data files to ensure JSON structure is valid and logic doesn't break.
-*   Check that `year` fields in the JSON files are updated to the target tax year.
+After updating data files:
+1.  Run the application locally.
+2.  Use the "Results" dashboard to verify that tax calculations for a sample high-income earner in a high-tax state (e.g., CA/NY) and a no-tax state (e.g., TX/FL) look reasonable compared to online tax calculators.
