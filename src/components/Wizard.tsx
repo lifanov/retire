@@ -7,8 +7,8 @@ const STATE_OPTIONS = Object.keys(stateTaxDataRaw).map(k => ({ value: k, label: 
 
 const FILING_STATUS_OPTIONS: { value: FilingStatus, label: string }[] = [
     { value: 'single', label: 'Single' },
-    { value: 'married_jointly', label: 'Married Filing Jointly' },
-    { value: 'married_separately', label: 'Married Filing Separately' },
+    { value: 'married_filing_jointly', label: 'Married Filing Jointly' },
+    { value: 'married_filing_separately', label: 'Married Filing Separately' },
     { value: 'head_of_household', label: 'Head of Household' }
 ];
 

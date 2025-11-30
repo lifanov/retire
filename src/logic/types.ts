@@ -1,25 +1,25 @@
 // Types for our calculation logic
 
-export type FilingStatus = 'single' | 'married_jointly' | 'married_separately' | 'head_of_household';
+export type FilingStatus = 'single' | 'married_filing_jointly' | 'married_filing_separately' | 'head_of_household';
 
 export interface TaxData {
-    year: number;
+    year?: number; // Made optional as it's not strictly used in logic, but good for metadata
     standard_deduction: {
         single: number;
-        married_jointly: number;
-        married_separately: number;
+        married_filing_jointly: number;
+        married_filing_separately: number;
         head_of_household: number;
     };
     brackets: {
         single: { rate: number; min: number; max: number | null }[];
-        married_jointly: { rate: number; min: number; max: number | null }[];
-        married_separately: { rate: number; min: number; max: number | null }[];
+        married_filing_jointly: { rate: number; min: number; max: number | null }[];
+        married_filing_separately: { rate: number; min: number; max: number | null }[];
         head_of_household: { rate: number; min: number; max: number | null }[];
     };
     capital_gains: {
         single: { rate: number; min: number; max: number | null }[];
-        married_jointly: { rate: number; min: number; max: number | null }[];
-        married_separately: { rate: number; min: number; max: number | null }[];
+        married_filing_jointly: { rate: number; min: number; max: number | null }[];
+        married_filing_separately: { rate: number; min: number; max: number | null }[];
         head_of_household: { rate: number; min: number; max: number | null }[];
     };
 }
@@ -28,8 +28,8 @@ export interface StateTaxData {
     name: string;
     standard_deduction: {
         single: number;
-        married_jointly: number;
-        married_separately: number;
+        married_filing_jointly: number;
+        married_filing_separately: number;
         head_of_household: number;
     };
     income_tax: {
