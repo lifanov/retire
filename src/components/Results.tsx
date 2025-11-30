@@ -1,9 +1,9 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip as RechartsTooltip, XAxis, YAxis } from 'recharts';
 import { type WizardData } from './Wizard';
 import { RetirementCalculator } from '../logic/RetirementCalculator';
 import { CONSTANTS, type SimulationInputs, type SimulationResult, type StateTaxData } from '../logic/types';
-import { Select } from './UI';
+import { Select, Tooltip, HelpIcon } from './UI';
 
 import stateTaxDataRaw from '../data/state_tax_config.json';
 import healthcareDataRaw from '../data/healthcare_data.json';
@@ -34,7 +34,7 @@ interface Props {
 }
 
 const SliderRow: React.FC<{
-    label: string;
+    label: string | React.ReactNode;
     value: number;
     min: number;
     max: number;
@@ -42,9 +42,9 @@ const SliderRow: React.FC<{
     onChange: (val: number) => void;
     format?: (val: number) => string;
 }> = ({ label, value, min, max, step=1, onChange, format }) => (
-    <div className="flex flex-col mb-4 p-2 bg-gray-50 rounded hover:bg-gray-100 transition-colors" id={`row-${label.replace(/\s/g, '')}`}>
+    <div className="flex flex-col mb-4 p-2 bg-gray-50 rounded hover:bg-gray-100 transition-colors" id={`row-${typeof label === 'string' ? label.replace(/\s/g, '') : 'slider'}`}>
         <div className="flex justify-between mb-1">
-            <span className="font-medium text-gray-700">{label}</span>
+            <span className="font-medium text-gray-700 flex items-center">{label}</span>
             <span className="font-bold text-blue-800">{format ? format(value) : value}</span>
         </div>
         <input
@@ -89,7 +89,7 @@ const SavingsGraph: React.FC<{ history: SimulationResult['history'], withdrawalR
                         tickFormatter={(value) => `$${(value / 1000000).toFixed(1)}M`}
                         width={60}
                     />
-                    <Tooltip
+                    <RechartsTooltip
                         labelFormatter={(label) => `Age ${label}`}
                         content={({ active, payload, label }) => {
                             if (active && payload && payload.length) {
@@ -215,16 +215,18 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
         if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     };
 
-    const FormulaItem: React.FC<{ label: string, value: string, targetId: string, operator?: string }> = ({ label, value, targetId, operator }) => (
+    const FormulaItem: React.FC<{ label: string, value: string, targetId: string, operator?: string, tooltip?: React.ReactNode }> = ({ label, value, targetId, operator, tooltip }) => (
         <span className="inline-flex items-center gap-2 flex-wrap">
             {operator && <span className="text-gray-400 font-light text-2xl">{operator}</span>}
-            <button
-                onClick={() => scrollTo(targetId)}
-                className="flex flex-col items-center p-2 rounded hover:bg-blue-50 transition cursor-pointer border border-transparent hover:border-blue-200"
-            >
-                <span className="text-xs text-gray-500 uppercase font-bold tracking-wider">{label}</span>
-                <span className="text-xl md:text-2xl font-mono font-bold text-gray-800">{value}</span>
-            </button>
+            <Tooltip content={tooltip || label}>
+                <button
+                    onClick={() => scrollTo(targetId)}
+                    className="flex flex-col items-center p-2 rounded hover:bg-blue-50 transition cursor-pointer border border-transparent hover:border-blue-200"
+                >
+                    <span className="text-xs text-gray-500 uppercase font-bold tracking-wider">{label}</span>
+                    <span className="text-xl md:text-2xl font-mono font-bold text-gray-800">{value}</span>
+                </button>
+            </Tooltip>
         </span>
     );
 
@@ -271,12 +273,19 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
                                 label={`Safe Withdrawal (${(withdrawalRate * 100).toFixed(1)}%)`}
                                 value={formatMoney(safeWithdrawal)}
                                 targetId="row-Constants"
+                                tooltip={
+                                    <span>
+                                        Safe Withdrawal Limit<br/>
+                                        Assets (${formatMoney(retirementYearData.assetsStart)}) × Rate ({(withdrawalRate * 100).toFixed(1)}%)
+                                    </span>
+                                }
                             />
                             <FormulaItem
                                 label="Social Security"
                                 value={formatMoney(retirementYearData.income)}
                                 targetId="row-SocialSecurity(at67)"
                                 operator="+"
+                                tooltip="Annual Social Security Benefit"
                             />
                         </div>
                     </div>
@@ -290,18 +299,26 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
                                 label="Expenses"
                                 value={formatMoney(retirementYearData.expenses)}
                                 targetId="row-AnnualExpenses"
+                                tooltip="Projected Annual Living Expenses (Inflation Adjusted)"
                             />
                             <FormulaItem
                                 label="Healthcare"
                                 value={formatMoney(retirementYearData.healthcare)}
                                 targetId="row-Age"
                                 operator="+"
+                                tooltip={
+                                    <span>
+                                        Estimated Healthcare Costs<br/>
+                                        (Base + Out of Pocket) × Age Factor × Inflation
+                                    </span>
+                                }
                             />
                             <FormulaItem
                                 label="Taxes"
                                 value={formatMoney(retirementYearData.taxes)}
                                 targetId="row-State"
                                 operator="+"
+                                tooltip="Estimated Federal, State, and FICA Taxes"
                             />
                         </div>
                     </div>
@@ -423,6 +440,34 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
                         step={1}
                         onChange={v => setSimInputs({...simInputs, socialSecurityStartAge: v})}
                     />
+
+                    <SliderRow
+                        label={
+                            <Tooltip content="Percentage of post-tax assets considered 'principal' at retirement start. Lower basis means higher capital gains taxes.">
+                                <span className="flex items-center">Start Cap Gains Basis <HelpIcon /></span>
+                            </Tooltip>
+                        }
+                        value={(simInputs.capitalGainsBasisStart ?? 0.9) * 100}
+                        min={0}
+                        max={100}
+                        step={5}
+                        onChange={v => setSimInputs({...simInputs, capitalGainsBasisStart: v / 100})}
+                        format={v => `${v}%`}
+                    />
+
+                    <SliderRow
+                        label={
+                            <Tooltip content="Projected cost basis at end of life. Used to simulate basis degradation over time as you sell newer (high basis) lots first.">
+                                <span className="flex items-center">End Cap Gains Basis <HelpIcon /></span>
+                            </Tooltip>
+                        }
+                        value={(simInputs.capitalGainsBasisEnd ?? 0.1) * 100}
+                        min={0}
+                        max={100}
+                        step={5}
+                        onChange={v => setSimInputs({...simInputs, capitalGainsBasisEnd: v / 100})}
+                        format={v => `${v}%`}
+                    />
                 </div>
 
                 <div className="bg-white p-6 rounded-xl shadow">
@@ -445,6 +490,13 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
                                     <p><span className="font-semibold">Type:</span> {selectedStateData.income_tax.type}</p>
                                     {selectedStateData.standard_deduction && (
                                         <p><span className="font-semibold">Std Deduction:</span> {formatMoney(selectedStateData.standard_deduction[simInputs.filingStatus])}</p>
+                                    )}
+
+                                    {selectedStateData.income_tax.type === 'flat' && (
+                                        <p><span className="font-semibold">Rate:</span> {(selectedStateData.income_tax.rate! * 100).toFixed(2)}%</p>
+                                    )}
+                                    {selectedStateData.income_tax.type === 'progressive' && selectedStateData.income_tax.brackets && (
+                                         <p><span className="font-semibold">Max Rate:</span> {(Math.max(...selectedStateData.income_tax.brackets.map(b => b.rate)) * 100).toFixed(2)}%</p>
                                     )}
 
                                     {selectedStateData.capital_gains_tax && (
@@ -474,7 +526,9 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
                              </div>
 
                              <div className="grid grid-cols-2 gap-y-2 text-sm items-center">
-                                 <span className="text-gray-600">Inflation</span>
+                                 <Tooltip content="Estimated annual inflation rate for expenses.">
+                                    <span className="text-gray-600 flex items-center">Inflation <HelpIcon /></span>
+                                 </Tooltip>
                                  {tweakAssumptions ? (
                                     <input
                                         type="number"
@@ -487,7 +541,9 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
                                     <span className="font-mono text-right">{((simInputs.inflationRate ?? CONSTANTS.INFLATION) * 100).toFixed(1)}%</span>
                                  )}
 
-                                 <span className="text-gray-600">Inv. Return Rate</span>
+                                 <Tooltip content="Assumed annual rate of return on investments.">
+                                    <span className="text-gray-600 flex items-center">Inv. Return Rate <HelpIcon /></span>
+                                 </Tooltip>
                                  {tweakAssumptions ? (
                                     <input
                                         type="number"
@@ -500,7 +556,9 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
                                     <span className="font-mono text-right">{((simInputs.returnRate ?? CONSTANTS.RETURN_RATE) * 100).toFixed(1)}%</span>
                                  )}
 
-                                 <span className="text-gray-600">Healthcare Inflation</span>
+                                 <Tooltip content="Inflation rate specific to healthcare costs, often higher than general inflation.">
+                                    <span className="text-gray-600 flex items-center">Healthcare Inflation <HelpIcon /></span>
+                                 </Tooltip>
                                  {tweakAssumptions ? (
                                     <input
                                         type="number"
@@ -513,36 +571,9 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
                                     <span className="font-mono text-right">{((simInputs.healthcareInflationRate ?? CONSTANTS.HEALTHCARE_INFLATION) * 100).toFixed(1)}%</span>
                                  )}
 
-                                 <span className="text-gray-600">Start Cap Gains Basis</span>
-                                 {tweakAssumptions ? (
-                                    <input
-                                        type="number"
-                                        step="0.1"
-                                        min="0" max="1"
-                                        value={(simInputs.capitalGainsBasisStart ?? 0.9).toFixed(1)}
-                                        onChange={e => setSimInputs({...simInputs, capitalGainsBasisStart: parseFloat(e.target.value)})}
-                                        className="text-right border rounded p-1 w-20"
-                                    />
-                                 ) : (
-                                    <span className="font-mono text-right">{((simInputs.capitalGainsBasisStart ?? 0.9) * 100).toFixed(0)}%</span>
-                                 )}
-
-                                <span className="text-gray-600">End Cap Gains Basis</span>
-                                 {tweakAssumptions ? (
-                                    <input
-                                        type="number"
-                                        step="0.1"
-                                        min="0" max="1"
-                                        value={(simInputs.capitalGainsBasisEnd ?? 0.1).toFixed(1)}
-                                        onChange={e => setSimInputs({...simInputs, capitalGainsBasisEnd: parseFloat(e.target.value)})}
-                                        className="text-right border rounded p-1 w-20"
-                                    />
-                                 ) : (
-                                    <span className="font-mono text-right">{((simInputs.capitalGainsBasisEnd ?? 0.1) * 100).toFixed(0)}%</span>
-                                 )}
-
-
-                                 <span className="text-gray-600">Safe Withdrawal Rate</span>
+                                 <Tooltip content="Percentage of assets you withdraw annually. 4% is a common rule of thumb.">
+                                     <span className="text-gray-600 flex items-center">Safe Withdrawal Rate <HelpIcon /></span>
+                                 </Tooltip>
                                  {tweakAssumptions ? (
                                     <input
                                         type="number"
