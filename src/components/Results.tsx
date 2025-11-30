@@ -276,7 +276,7 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
                                 tooltip={
                                     <span>
                                         Safe Withdrawal Limit<br/>
-                                        Assets (${formatMoney(retirementYearData.assetsStart)}) × Rate ({(withdrawalRate * 100).toFixed(1)}%)
+                                        Assets ({formatMoney(retirementYearData.assetsStart)}) × Rate ({(withdrawalRate * 100).toFixed(1)}%)
                                     </span>
                                 }
                             />
