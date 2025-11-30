@@ -446,12 +446,32 @@ export class RetirementCalculator {
             }
 
             if (taxToPay > 0) {
-                 if (assetsPreTax >= taxToPay) {
-                     assetsPreTax -= taxToPay;
+                 // Simplified Gross Up: When paying taxes from Pre-Tax accounts,
+                 // we must withdraw MORE than the tax bill to cover the tax on the withdrawal itself.
+                 // We use a 1.25x factor (approx 20% effective tax rate).
+                 const grossUpFactor = 1.25;
+                 const grossAmount = taxToPay * grossUpFactor;
+
+                 if (assetsPreTax >= grossAmount) {
+                     assetsPreTax -= grossAmount;
+                     // The difference (grossAmount - taxToPay) is effectively "withheld" for next year's tax?
+                     // In this simplified model, we just burn the assets to represent the cost.
+                     // The tax on this withdrawal will technically appear in next year's RMD/Income calculation
+                     // if we tracked it as 'income' for next year.
+                     // However, since we are in the "Pay Taxes" phase for the CURRENT year, and we already calculated taxes,
+                     // this extra withdrawal is technically income for the *current* year that wasn't taxed yet.
+                     // This creates the recursive loop. By burning 1.25x, we simulate the cost of that recursion
+                     // without re-running the tax engine.
                      taxToPay = 0;
                  } else {
-                     taxToPay -= assetsPreTax;
+                     // If we don't have enough to pay the full grossed-up amount,
+                     // we drain the account.
+                     const available = assetsPreTax;
                      assetsPreTax = 0;
+                     // How much tax did we actually pay?
+                     // available = taxPaid * 1.25 -> taxPaid = available / 1.25
+                     const taxPaid = available / grossUpFactor;
+                     taxToPay -= taxPaid;
                  }
             }
 

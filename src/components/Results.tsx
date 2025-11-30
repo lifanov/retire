@@ -236,7 +236,7 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
     const surplus = totalIncome - totalOutflow;
 
     const selectedStateData = (stateTaxDataRaw as any)[simInputs.state] as StateTaxData;
-    // const stateHealthcareMultiplier = (healthcareDataRaw.state_multipliers as any)[simInputs.state] || 1.0;
+    const stateHealthcareMultiplier = (healthcareDataRaw.state_multipliers as any)[simInputs.state] || 1.0;
 
     return (
         <div className="max-w-6xl mx-auto p-6">
@@ -585,6 +585,9 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
 
                                  <span className="text-gray-600">Medicare Total (Est)</span>
                                  <span className="font-mono text-right">{formatMoney(healthcareDataRaw.medicare_annual_cost.total)}</span>
+
+                                 <span className="text-gray-600">Healthcare Cost Factor</span>
+                                 <span className="font-mono text-right">{stateHealthcareMultiplier.toFixed(2)}x</span>
                              </div>
                          </div>
 
