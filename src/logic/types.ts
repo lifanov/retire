@@ -73,6 +73,7 @@ export interface SimulationInputs {
     inflationRate?: number;
     returnRate?: number;
     healthcareInflationRate?: number;
+    taxBracketInflationRate?: number; // User tweakable now, defaults to tax_rules constant
     capitalGainsBasisStart?: number; // 0.0 to 1.0 (default 0.9)
     capitalGainsBasisEnd?: number; // 0.0 to 1.0 (default 0.1)
 }

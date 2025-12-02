@@ -1,0 +1,16 @@
+{
+    "social_security_thresholds": {
+        "single": { "threshold1": 25000, "threshold2": 34000 },
+        "head_of_household": { "threshold1": 25000, "threshold2": 34000 },
+        "married_filing_jointly": { "threshold1": 32000, "threshold2": 44000 },
+        "married_filing_separately": { "threshold1": 0, "threshold2": 0 }
+    },
+    "fica_tax": {
+        "social_security_rate": 0.062,
+        "medicare_rate": 0.0145,
+        "ss_wage_base_2025": 176100
+    },
+    "constants": {
+        "TAX_BRACKET_INFLATION": 0.025
+    }
+}

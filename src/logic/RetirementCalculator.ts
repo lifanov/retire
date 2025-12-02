@@ -2,34 +2,42 @@ import { type SimulationInputs, type SimulationResult, type YearLog, CONSTANTS, 
 import federalTaxDataRaw from '../data/federal_tax_data.json';
 import stateTaxDataRaw from '../data/state_tax_config.json';
 import healthcareDataRaw from '../data/healthcare_data.json';
+import taxRulesRaw from '../data/tax_rules.json';
 import { RMD_TABLE } from './rmd';
 
 const federalTaxData = federalTaxDataRaw as TaxData;
 const stateTaxData = stateTaxDataRaw as Record<string, StateTaxData>;
+const taxRules = taxRulesRaw;
 
 export class RetirementCalculator {
     private inputs: SimulationInputs;
     private inflationRate: number;
     private returnRate: number;
     private healthcareInflationRate: number;
+    private taxBracketInflationRate: number;
 
     constructor(inputs: SimulationInputs) {
         this.inputs = inputs;
         this.inflationRate = inputs.inflationRate ?? CONSTANTS.INFLATION;
         this.returnRate = inputs.returnRate ?? CONSTANTS.RETURN_RATE;
         this.healthcareInflationRate = inputs.healthcareInflationRate ?? CONSTANTS.HEALTHCARE_INFLATION;
+        this.taxBracketInflationRate = inputs.taxBracketInflationRate ?? taxRules.constants.TAX_BRACKET_INFLATION;
     }
 
     private inflate(amount: number, yearsPassed: number): number {
         return amount * Math.pow(1 + this.inflationRate, yearsPassed);
     }
 
+    private inflateTaxBracket(amount: number, yearsPassed: number): number {
+        return amount * Math.pow(1 + this.taxBracketInflationRate, yearsPassed);
+    }
+
     // Helper to inflate tax brackets
     private getInflatedBrackets(brackets: { rate: number; min: number; max: number | null }[], yearsPassed: number) {
         return brackets.map(b => ({
             ...b,
-            min: this.inflate(b.min, yearsPassed),
-            max: b.max === null ? null : this.inflate(b.max, yearsPassed)
+            min: this.inflateTaxBracket(b.min, yearsPassed),
+            max: b.max === null ? null : this.inflateTaxBracket(b.max, yearsPassed)
         }));
     }
 
@@ -37,7 +45,7 @@ export class RetirementCalculator {
     private getInflatedStateBrackets(brackets: { rate: number; min: number }[], yearsPassed: number) {
         return brackets.map(b => ({
             ...b,
-            min: this.inflate(b.min, yearsPassed)
+            min: this.inflateTaxBracket(b.min, yearsPassed)
         }));
     }
 
@@ -205,6 +213,54 @@ export class RetirementCalculator {
 
         const divisor = RMD_TABLE[age] || RMD_TABLE[120]; // Cap at 120
         return preTaxBalance / divisor;
+    }
+
+    private calculateTaxableSocialSecurity(socialSecurity: number, otherIncome: number, filingStatus: FilingStatus): number {
+        if (socialSecurity <= 0) return 0;
+
+        // Provisional Income = Other Income + 0.5 * Social Security
+        const provisionalIncome = otherIncome + (socialSecurity * 0.5);
+
+        const thresholds = taxRules.social_security_thresholds[filingStatus] || taxRules.social_security_thresholds.single;
+        const threshold1 = thresholds.threshold1;
+        const threshold2 = thresholds.threshold2;
+
+        // Logic from IRS Worksheet
+        // Tier 1: 50% taxable above Threshold 1
+        // Tier 2: 85% taxable above Threshold 2
+
+        // But it's not just stacking rates. It's:
+        // Taxable = Min(
+        //    0.85 * SS,
+        //    Min(0.5 * SS, 0.5 * (PI - T1)) + 0.85 * (PI - T2)
+        // )
+        // Wait, the formula is slightly more complex.
+        // Let's use the standard "bump" logic:
+
+        let taxableAmount = 0;
+
+        if (provisionalIncome > threshold2) {
+             const amountAboveT2 = provisionalIncome - threshold2;
+             const amountBetweenT1AndT2 = threshold2 - threshold1;
+
+             // 85% of excess over T2
+             // PLUS 50% of amount between T1 and T2 (or 50% of SS, whichever is less?)
+             // Actually, usually it is:
+             // 85% * (PI - T2) + Min(0.5 * SS, 0.5 * (T2 - T1))
+             // But limited to 0.85 * SS Max.
+
+             const tier1Taxable = Math.min(socialSecurity * 0.5, amountBetweenT1AndT2 * 0.5);
+             const tier2Taxable = amountAboveT2 * 0.85;
+
+             taxableAmount = tier1Taxable + tier2Taxable;
+        } else if (provisionalIncome > threshold1) {
+             taxableAmount = (provisionalIncome - threshold1) * 0.5;
+        } else {
+             taxableAmount = 0;
+        }
+
+        // Cap at 85% of total benefits
+        return Math.min(taxableAmount, socialSecurity * 0.85);
     }
 
     public simulate(): SimulationResult {
@@ -405,9 +461,12 @@ export class RetirementCalculator {
             // 5. Realized Capital Gains (Separate bucket usually, but affects brackets)
 
             const standardDeductionRaw = federalTaxData.standard_deduction[this.inputs.filingStatus];
-            const standardDeduction = this.inflate(standardDeductionRaw, yearsPassed);
+            const standardDeduction = this.inflateTaxBracket(standardDeductionRaw, yearsPassed);
 
-            const ordinaryIncome = laborIncome + (socialSecurity * 0.85) + withdrawnPreTax + cashYield;
+            const otherIncomeForSS = laborIncome + withdrawnPreTax + cashYield + realizedGains;
+            const taxableSS = this.calculateTaxableSocialSecurity(socialSecurity, otherIncomeForSS, this.inputs.filingStatus);
+
+            const ordinaryIncome = laborIncome + taxableSS + withdrawnPreTax + cashYield;
             const taxableOrdinaryIncome = Math.max(0, ordinaryIncome - standardDeduction);
 
             const fedTax = this.calculateFederalTax(taxableOrdinaryIncome, this.inputs.filingStatus, yearsPassed);
@@ -416,7 +475,24 @@ export class RetirementCalculator {
             const totalIncomeForCapGains = taxableOrdinaryIncome + realizedGains;
             const capGainsTax = this.calculateCapitalGainsTax(totalIncomeForCapGains, realizedGains, this.inputs.filingStatus, yearsPassed);
 
-            const totalTaxes = fedTax + stateTax + capGainsTax;
+            // FICA Taxes (Labor Income only)
+            // Social Security & Medicare
+            // Wage Base 2025 (Inflated by general inflation rate to track wage growth)
+            const ssWageBase = this.inflate(taxRules.fica_tax.ss_wage_base_2025, yearsPassed);
+            const ssTax = Math.min(laborIncome, ssWageBase) * taxRules.fica_tax.social_security_rate;
+            const medicareTax = laborIncome * taxRules.fica_tax.medicare_rate;
+            const ficaTax = ssTax + medicareTax;
+
+            // Early Withdrawal Penalty
+            // 10% penalty on Pre-Tax withdrawals if age < 60 (approximation for 59.5)
+            let earlyWithdrawalPenalty = 0;
+            if (currentAge < 60 && withdrawnPreTax > 0) {
+                 // Note: RMDs don't happen before 73, so withdrawnPreTax here is purely voluntary withdrawals
+                 // However, we added RMD to withdrawnPreTax earlier. But since RMD age > 60, it's safe.
+                 earlyWithdrawalPenalty = withdrawnPreTax * 0.10;
+            }
+
+            const totalTaxes = fedTax + stateTax + capGainsTax + ficaTax + earlyWithdrawalPenalty;
 
 
             // --- 7. Pay Taxes ---

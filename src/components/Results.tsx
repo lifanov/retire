@@ -8,6 +8,7 @@ import { Select, Tooltip, HelpIcon } from './UI';
 import stateTaxDataRaw from '../data/state_tax_config.json';
 import healthcareDataRaw from '../data/healthcare_data.json';
 import federalTaxDataRaw from '../data/federal_tax_data.json';
+import taxRulesRaw from '../data/tax_rules.json';
 
 const STATE_OPTIONS = Object.keys(stateTaxDataRaw).map(k => ({ value: k, label: (stateTaxDataRaw as any)[k].name }));
 
@@ -170,6 +171,7 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
             inflationRate: CONSTANTS.INFLATION,
             returnRate: CONSTANTS.RETURN_RATE,
             healthcareInflationRate: CONSTANTS.HEALTHCARE_INFLATION,
+            taxBracketInflationRate: taxRulesRaw.constants.TAX_BRACKET_INFLATION,
             capitalGainsBasisStart: 0.9,
             capitalGainsBasisEnd: 0.1
         };
@@ -276,7 +278,7 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
                                 tooltip={
                                     <span>
                                         Safe Withdrawal Limit<br/>
-                                        Assets (${formatMoney(retirementYearData.assetsStart)}) × Rate ({(withdrawalRate * 100).toFixed(1)}%)
+                                        Assets ({formatMoney(retirementYearData.assetsStart)}) × Rate ({(withdrawalRate * 100).toFixed(1)}%)
                                     </span>
                                 }
                             />
@@ -569,6 +571,21 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
                                     />
                                  ) : (
                                     <span className="font-mono text-right">{((simInputs.healthcareInflationRate ?? CONSTANTS.HEALTHCARE_INFLATION) * 100).toFixed(1)}%</span>
+                                 )}
+
+                                 <Tooltip content="Rate at which tax brackets inflate annually. Usually Chained CPI, lower than general inflation.">
+                                    <span className="text-gray-600 flex items-center">Tax Bracket Inflation <HelpIcon /></span>
+                                 </Tooltip>
+                                 {tweakAssumptions ? (
+                                    <input
+                                        type="number"
+                                        step="0.1"
+                                        value={((simInputs.taxBracketInflationRate ?? taxRulesRaw.constants.TAX_BRACKET_INFLATION) * 100).toFixed(1)}
+                                        onChange={e => setSimInputs({...simInputs, taxBracketInflationRate: parseFloat(e.target.value) / 100})}
+                                        className="text-right border rounded p-1 w-20"
+                                    />
+                                 ) : (
+                                    <span className="font-mono text-right">{((simInputs.taxBracketInflationRate ?? taxRulesRaw.constants.TAX_BRACKET_INFLATION) * 100).toFixed(1)}%</span>
                                  )}
 
                                  <Tooltip content="Percentage of assets you withdraw annually. 4% is a common rule of thumb.">
