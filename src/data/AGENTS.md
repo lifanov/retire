@@ -4,49 +4,6 @@ This file contains instructions for maintaining the external data files used in 
 Future agents should consult this file when asked to update tax data, social security thresholds, or healthcare costs.
 
 ## 1. Tax Rules & Social Security (`src/data/tax_rules.json`)
-
-This file contains critical constants for the financial model that are not automatically updated.
-
-### Social Security Provisional Income Thresholds
-These thresholds determine the taxable portion of Social Security benefits. They are **not** indexed for inflation (historically).
-Source: IRS Publication 915 "Social Security and Equivalent Railroad Retirement Benefits"
-
-**Reference Values (Check `src/data/tax_rules.json` for current code values):**
-
-**Single, Head of Household, Qualifying Widow(er)**
-*   Threshold 1 (0% -> 50%): $25,000
-*   Threshold 2 (50% -> 85%): $34,000
-
-**Married Filing Jointly**
-*   Threshold 1 (0% -> 50%): $32,000
-*   Threshold 2 (50% -> 85%): $44,000
-
-**Married Filing Separately**
-*   Thresholds are $0. 85% of benefits are taxable immediately (unless lived apart for entire year, which we simplify to standard MFS rules).
-
-**To Update:**
-1.  Search for "IRS Publication 915" or "Social Security tax thresholds".
-2.  Update the `social_security_thresholds` object in `src/data/tax_rules.json`.
-
-### FICA Tax Limits (2025 Base)
-Source: IRS Publication 15 (Circular E)
-
-**Reference Values (Check `src/data/tax_rules.json`):**
-*   **Social Security Tax Rate:** 6.2%
-*   **Medicare Tax Rate:** 1.45%
-*   **Social Security Wage Base Limit:** $176,100 (This limit rises with average wages).
-
-**To Update:**
-1.  Search for "IRS Publication 15 Circular E" or "Social Security wage base limit [Year]".
-2.  Update the `fica_tax` object in `src/data/tax_rules.json`. Update `ss_wage_base_2025` (the code inflates this automatically, but updating the base year provides accuracy).
-
-### Tax Bracket Inflation
-The simulator uses a fixed **2.5% inflation rate** (`TAX_BRACKET_INFLATION`) for tax brackets to mimic Chained CPI, separate from the user's general inflation input.
-
-**To Update:**
-1.  Verify the long-term assumption for Chained CPI if economic conditions shift significantly.
-2.  Update `constants.TAX_BRACKET_INFLATION` in `src/data/tax_rules.json`.
-
 ## 2. Federal Tax Data (`src/data/federal_tax_data.json`)
 
 This file contains the federal income tax brackets and standard deductions for the *current* base year. The application automatically inflates these values for future years in the simulation.
