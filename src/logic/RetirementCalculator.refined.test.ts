@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { RetirementCalculator } from './RetirementCalculator';
-import { CONSTANTS, type SimulationInputs } from './types';
+import { type SimulationInputs } from './types';
 
 // Mock inputs
 const baseInputs: SimulationInputs = {
@@ -30,8 +30,6 @@ describe('RetirementCalculator Refinements', () => {
         // SS: 100k * 6.2% = 6200
         // Med: 100k * 1.45% = 1450
         // Total FICA = 7650
-        const calc = new RetirementCalculator(baseInputs);
-        const result = calc.simulate();
 
         // Use a state with NO income tax to isolate FICA + Federal
         // WA has no income tax (only cap gains which we don't have here)
@@ -144,10 +142,6 @@ describe('RetirementCalculator Refinements', () => {
         // The code allows labor income only if !isRetired.
         // But RMD is forced.
 
-        const richInputs: SimulationInputs = {
-            ...zeroInflationInputs,
-            savingsPreTax: 2000000 // 2M PreTax -> RMD at 70 is ~2M/27.4 = 73k
-        };
         // SS = 20k.
         // RMD = ~73k.
         // Provisional Income = 73k + (20k * 0.5) = 83k.

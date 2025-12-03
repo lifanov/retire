@@ -14,12 +14,14 @@ export class RetirementCalculator {
     private inflationRate: number;
     private returnRate: number;
     private healthcareInflationRate: number;
+    private taxBracketInflationRate: number;
 
     constructor(inputs: SimulationInputs) {
         this.inputs = inputs;
         this.inflationRate = inputs.inflationRate ?? CONSTANTS.INFLATION;
         this.returnRate = inputs.returnRate ?? CONSTANTS.RETURN_RATE;
         this.healthcareInflationRate = inputs.healthcareInflationRate ?? CONSTANTS.HEALTHCARE_INFLATION;
+        this.taxBracketInflationRate = inputs.taxBracketInflationRate ?? taxRules.constants.TAX_BRACKET_INFLATION;
     }
 
     private inflate(amount: number, yearsPassed: number): number {
@@ -27,7 +29,7 @@ export class RetirementCalculator {
     }
 
     private inflateTaxBracket(amount: number, yearsPassed: number): number {
-        return amount * Math.pow(1 + taxRules.constants.TAX_BRACKET_INFLATION, yearsPassed);
+        return amount * Math.pow(1 + this.taxBracketInflationRate, yearsPassed);
     }
 
     // Helper to inflate tax brackets
