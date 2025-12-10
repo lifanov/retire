@@ -173,7 +173,9 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
             healthcareInflationRate: CONSTANTS.HEALTHCARE_INFLATION,
             taxBracketInflationRate: taxRulesRaw.constants.TAX_BRACKET_INFLATION,
             capitalGainsBasisStart: 0.9,
-            capitalGainsBasisEnd: 0.1
+            capitalGainsBasisEnd: 0.1,
+            passiveIncome: 0,
+            passiveIncomeType: 'inflation'
         };
     });
 
@@ -283,11 +285,22 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
                                 }
                             />
                             <FormulaItem
-                                label="Social Security"
+                                label={simInputs.passiveIncome && simInputs.passiveIncome > 0 ? "Guaranteed Income" : "Social Security"}
                                 value={formatMoney(retirementYearData.income)}
                                 targetId="row-SocialSecurity(at67)"
                                 operator="+"
-                                tooltip="Annual Social Security Benefit"
+                                tooltip={
+                                    simInputs.passiveIncome && simInputs.passiveIncome > 0 ? (
+                                        <div className="text-left">
+                                            <p className="font-bold underline mb-1">Income Breakdown</p>
+                                            <p>Social Security: {formatMoney(retirementYearData.breakdown?.socialSecurity ?? 0)}</p>
+                                            <p>Passive Income: {formatMoney(retirementYearData.breakdown?.passive ?? 0)}</p>
+                                            {retirementYearData.breakdown?.cashYield > 0 && (
+                                                 <p>Interest: {formatMoney(retirementYearData.breakdown?.cashYield)}</p>
+                                            )}
+                                        </div>
+                                    ) : "Annual Social Security Benefit"
+                                }
                             />
                         </div>
                     </div>
@@ -442,6 +455,37 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
                         step={1}
                         onChange={v => setSimInputs({...simInputs, socialSecurityStartAge: v})}
                     />
+
+                    <div>
+                        <SliderRow
+                            label={
+                                <Tooltip content="Recurring income like rental properties, royalties, or annuities. Taxed as ordinary income.">
+                                    <span className="flex items-center">Passive Income <HelpIcon /></span>
+                                </Tooltip>
+                            }
+                            value={simInputs.passiveIncome || 0}
+                            min={0}
+                            max={200000}
+                            step={1000}
+                            onChange={v => setSimInputs({...simInputs, passiveIncome: v})}
+                            format={formatMoney}
+                        />
+                        <div className="flex gap-4 text-xs justify-end -mt-3 mb-4 pr-2">
+                             {['inflation', 'fixed', 'decaying'].map(opt => (
+                                <label key={opt} className="flex items-center gap-1 cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        name="passiveType"
+                                        value={opt}
+                                        checked={(simInputs.passiveIncomeType || 'inflation') === opt}
+                                        onChange={() => setSimInputs({...simInputs, passiveIncomeType: opt as any})}
+                                        className="text-blue-600 focus:ring-blue-500"
+                                    />
+                                    <span className="capitalize text-gray-600">{opt}</span>
+                                </label>
+                            ))}
+                        </div>
+                    </div>
 
                     <SliderRow
                         label={

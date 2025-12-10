@@ -76,6 +76,10 @@ export interface SimulationInputs {
     taxBracketInflationRate?: number; // User tweakable now, defaults to tax_rules constant
     capitalGainsBasisStart?: number; // 0.0 to 1.0 (default 0.9)
     capitalGainsBasisEnd?: number; // 0.0 to 1.0 (default 0.1)
+
+    // Passive Income
+    passiveIncome?: number;
+    passiveIncomeType?: 'inflation' | 'fixed' | 'decaying';
 }
 
 export interface SimulationResult {
@@ -99,6 +103,13 @@ export interface YearLog {
     expenses: number;
     assetsEnd: number;
     cashBalance: number; // Added for debugging/validation
+    // Breakdown for UI transparency
+    breakdown: {
+        labor: number;
+        socialSecurity: number;
+        passive: number;
+        cashYield: number;
+    };
 }
 
 // Defaults

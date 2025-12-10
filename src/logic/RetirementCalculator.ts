@@ -288,6 +288,35 @@ export class RetirementCalculator {
             // --- 1. Income (Inflows) ---
             let laborIncome = 0;
             let socialSecurity = 0;
+            let passiveIncomeAmount = 0;
+
+            // Passive Income Calculation
+            if (this.inputs.passiveIncome && this.inputs.passiveIncome > 0) {
+                 const type = this.inputs.passiveIncomeType || 'inflation';
+                 if (type === 'inflation') {
+                     passiveIncomeAmount = this.inflate(this.inputs.passiveIncome, yearsPassed);
+                 } else if (type === 'fixed') {
+                     passiveIncomeAmount = this.inputs.passiveIncome;
+                 } else if (type === 'decaying') {
+                     // Decays linearly to 0 by age 90
+                     // Formula: Start * ( (90 - Current) / (90 - StartAge) )
+                     // If current >= 90, 0.
+                     const endAge = 90;
+                     if (currentAge >= endAge) {
+                         passiveIncomeAmount = 0;
+                     } else {
+                         const startAge = this.inputs.currentAge;
+                         const duration = endAge - startAge;
+                         if (duration <= 0) {
+                             passiveIncomeAmount = 0; // Should not happen unless user starts >= 90
+                         } else {
+                             const remaining = endAge - currentAge;
+                             const factor = remaining / duration;
+                             passiveIncomeAmount = this.inputs.passiveIncome * factor;
+                         }
+                     }
+                 }
+            }
 
             if (!isRetired) {
                 laborIncome = this.inflate(this.inputs.annualIncome, yearsPassed);
@@ -347,7 +376,7 @@ export class RetirementCalculator {
 
 
             // --- 4. Withdrawal Strategy ---
-            const mandatoryIncome = laborIncome + socialSecurity + withdrawnPreTax; // RMD is already out
+            const mandatoryIncome = laborIncome + socialSecurity + withdrawnPreTax + passiveIncomeAmount; // RMD is already out
 
             let withdrawalNeeded = Math.max(0, grossNeeds - mandatoryIncome);
             let surplusToReinvest = Math.max(0, mandatoryIncome - grossNeeds);
@@ -463,10 +492,10 @@ export class RetirementCalculator {
             const standardDeductionRaw = federalTaxData.standard_deduction[this.inputs.filingStatus];
             const standardDeduction = this.inflateTaxBracket(standardDeductionRaw, yearsPassed);
 
-            const otherIncomeForSS = laborIncome + withdrawnPreTax + cashYield + realizedGains;
+            const otherIncomeForSS = laborIncome + withdrawnPreTax + cashYield + realizedGains + passiveIncomeAmount;
             const taxableSS = this.calculateTaxableSocialSecurity(socialSecurity, otherIncomeForSS, this.inputs.filingStatus);
 
-            const ordinaryIncome = laborIncome + taxableSS + withdrawnPreTax + cashYield;
+            const ordinaryIncome = laborIncome + taxableSS + withdrawnPreTax + cashYield + passiveIncomeAmount;
             const taxableOrdinaryIncome = Math.max(0, ordinaryIncome - standardDeduction);
 
             const fedTax = this.calculateFederalTax(taxableOrdinaryIncome, this.inputs.filingStatus, yearsPassed);
@@ -578,13 +607,19 @@ export class RetirementCalculator {
                 isRetired,
                 assetsStart,
                 investmentGrowth: growthCash + growthPre + growthPost + growthRoth + growthHSA,
-                income: laborIncome + socialSecurity + cashYield,
+                income: laborIncome + socialSecurity + cashYield + passiveIncomeAmount,
                 withdrawals: totalWithdrawals,
                 taxes: totalTaxes,
                 healthcare: totalHealthcareCost,
                 expenses: baseExpenses,
                 assetsEnd: totalAssets,
-                cashBalance: assetsCash
+                cashBalance: assetsCash,
+                breakdown: {
+                    labor: laborIncome,
+                    socialSecurity: socialSecurity,
+                    passive: passiveIncomeAmount,
+                    cashYield: cashYield
+                }
             });
 
             if (totalAssets < 0) {
