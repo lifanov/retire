@@ -29,6 +29,22 @@ function useDebounce<T>(value: T, delay: number): T {
   return debouncedValue;
 }
 
+// Helper to determine dynamic slider properties
+const getSliderProps = (initialValue: number | undefined, defaultMax: number, isCurrency: boolean = true) => {
+    const val = initialValue || 0;
+    const max = Math.max(defaultMax, val * 2);
+    let step = max / 100;
+
+    if (isCurrency) {
+        step = Math.floor(step);
+        if (step < 1) step = 1;
+    } else {
+         step = Math.max(1, Math.floor(step));
+    }
+
+    return { min: 0, max, step };
+};
+
 interface Props {
     initialData: WizardData;
     onReset: () => void;
@@ -362,17 +378,16 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
                     <SliderRow
                         label="Retirement Age"
                         value={simInputs.retirementAge}
-                        min={simInputs.currentAge + 1}
-                        max={80}
+                        min={initialData.currentAge}
+                        max={100}
+                        step={1}
                         onChange={v => setSimInputs({...simInputs, retirementAge: v})}
                     />
 
                     <SliderRow
                         label="Annual Expenses"
                         value={simInputs.annualExpenses}
-                        min={10000}
-                        max={200000}
-                        step={1000}
+                        {...getSliderProps(initialData.annualExpenses, 200000)}
                         onChange={v => setSimInputs({...simInputs, annualExpenses: v})}
                         format={formatMoney}
                     />
@@ -380,9 +395,7 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
                     <SliderRow
                         label="Annual Income (Pre-Retirement)"
                         value={simInputs.annualIncome}
-                        min={0}
-                        max={500000}
-                        step={1000}
+                        {...getSliderProps(initialData.annualIncome, 500000)}
                         onChange={v => setSimInputs({...simInputs, annualIncome: v})}
                         format={formatMoney}
                     />
@@ -390,9 +403,7 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
                      <SliderRow
                         label="Cash / HYSA"
                         value={simInputs.savingsCash}
-                        min={0}
-                        max={1000000}
-                        step={1000}
+                        {...getSliderProps(initialData.savingsCash, 1000000)}
                         onChange={v => setSimInputs({...simInputs, savingsCash: v})}
                         format={formatMoney}
                     />
@@ -400,9 +411,7 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
                      <SliderRow
                         label="Savings (Pre-Tax)"
                         value={simInputs.savingsPreTax}
-                        min={0}
-                        max={2000000}
-                        step={5000}
+                        {...getSliderProps(initialData.savingsPreTax, 2000000)}
                         onChange={v => setSimInputs({...simInputs, savingsPreTax: v})}
                         format={formatMoney}
                     />
@@ -410,9 +419,7 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
                      <SliderRow
                         label="Savings (Roth / Tax-Free)"
                         value={simInputs.savingsRoth}
-                        min={0}
-                        max={2000000}
-                        step={5000}
+                        {...getSliderProps(initialData.savingsRoth, 2000000)}
                         onChange={v => setSimInputs({...simInputs, savingsRoth: v})}
                         format={formatMoney}
                     />
@@ -420,9 +427,7 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
                      <SliderRow
                         label="Investments (Post-Tax)"
                         value={simInputs.investmentsPostTax}
-                        min={0}
-                        max={2000000}
-                        step={5000}
+                        {...getSliderProps(initialData.investmentsPostTax, 2000000)}
                         onChange={v => setSimInputs({...simInputs, investmentsPostTax: v})}
                         format={formatMoney}
                     />
@@ -430,9 +435,7 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
                      <SliderRow
                         label="HSA Balance"
                         value={simInputs.savingsHSA}
-                        min={0}
-                        max={500000}
-                        step={1000}
+                        {...getSliderProps(initialData.savingsHSA, 500000)}
                         onChange={v => setSimInputs({...simInputs, savingsHSA: v})}
                         format={formatMoney}
                     />
@@ -440,9 +443,7 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
                      <SliderRow
                         label="Social Security (at 67)"
                         value={simInputs.socialSecurityAt67}
-                        min={0}
-                        max={60000}
-                        step={1000}
+                        {...getSliderProps(initialData.ssEstimate, 60000)}
                         onChange={v => setSimInputs({...simInputs, socialSecurityAt67: v})}
                         format={formatMoney}
                     />
@@ -464,9 +465,7 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
                                 </Tooltip>
                             }
                             value={simInputs.passiveIncome || 0}
-                            min={0}
-                            max={200000}
-                            step={1000}
+                            {...getSliderProps(0, 500000)}
                             onChange={v => setSimInputs({...simInputs, passiveIncome: v})}
                             format={formatMoney}
                         />
@@ -496,7 +495,7 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
                         value={(simInputs.capitalGainsBasisStart ?? 0.9) * 100}
                         min={0}
                         max={100}
-                        step={5}
+                        step={1}
                         onChange={v => setSimInputs({...simInputs, capitalGainsBasisStart: v / 100})}
                         format={v => `${v}%`}
                     />
@@ -510,7 +509,7 @@ export const Results: React.FC<Props> = ({ initialData, onReset }) => {
                         value={(simInputs.capitalGainsBasisEnd ?? 0.1) * 100}
                         min={0}
                         max={100}
-                        step={5}
+                        step={1}
                         onChange={v => setSimInputs({...simInputs, capitalGainsBasisEnd: v / 100})}
                         format={v => `${v}%`}
                     />
